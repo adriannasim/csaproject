@@ -1,0 +1,9 @@
+THINGS TO DO BEFORE STARTING
+- Download MASM/TASM extension and VSCode DOSBox extension.
+
+THINGS TO TAKE NOTE
+1. Please run tests before pasting the code in the main file
+2. Please do not change the header and footer of the main file
+
+HOW TO DEBUG/RUN FILE
+- Right click on the target and and select run/debug ASM code
