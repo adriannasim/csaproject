@@ -1,0 +1,24 @@
+        ...................................
+        ...j............................aBl
+        ..tj.U.........uywwg...........aHNT
+        j.hj.H....ggBBBBBBBBBBBNw......NNNT
+        jrUjUb..gBBBBBRRNNNRRBBBBBg...jNNNT
+        jRHHRBzBBBBNNBBBBBBBBBBBBBBBL.jKNNT
+        .jQKFjBBBRNNBBBBBBBBBBBBBBBBBLjmNNK
+        ..jP.BBBBNNBBBBBBBBBBBBBBBBBBB.BBBL
+        ..jr.BBBBABBBBBBBBBBBBBBBBBBBB.jHN.
+        ..fr.BBBBBBBBBBBBBBBBBBBBBBBBB.lKR.
+        ..tr..BBBBBBBBBBBBBBBBBBBBBBBr.BNN.
+        ..Hr...BBBBBBBRBBBBBBBBBBBBBr..BNN.
+        .jmmh...JRBBBBBBBBBBBBBBBPC....BNNr
+        .AgKN......TTRBBBBBBBPFT.......KNNL
+        .jMMF..........................jHr.
+        ...................................
+
+==================================================
+                    MAIN PAGE  
+==================================================
+1. RESERVATION
+2. FOOD MENU
+3. LOGOUT
+==================================================

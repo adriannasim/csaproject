@@ -1,15 +1,16 @@
-TITLE   ASSIGNMENT  TESTMENU
+;TITLE
+TITLE   ASSIGNMENT  MAINPROGRAM
 
 .MODEL  SMALL
 .STACK  64
 .DATA
 
-;START OF VARIABLES DECLARATION
 ;-------------------------------------------------------------------------------------
+;START OF VARIABLES DECLARATION
 ;=================================READ FILE VARIABLES=================================
 ;MAINMENU
 MAINMENU    DB      "menu.txt", 0           ;FILENAME
-MMBUFFER    DB      862 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+MMBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 FILE_HANDLE DW      ?                       ;FILE HANDLE
 BYTESREAD   DW      0
 
@@ -43,6 +44,7 @@ CHECKPSW    DB      "HUNGRY$"
 
 ;END OF VARIABLES DECLARATION
 ;-------------------------------------------------------------------------------------
+;START OF MAIN PROGRAM
 ;==================================START OF HEADER====================================
 .CODE                                       ;DEFINE CODE SEGMENT
 
@@ -53,6 +55,7 @@ CHECKPSW    DB      "HUNGRY$"
 ;====================================END OF HEADER====================================
 
 ;=================================START OF MAIN MENU==================================
+    ;PRINT MENU
     ;OPEN THE FILE
     ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
     ; MOV     AL, 0                               ;READ-ONLY MODE
@@ -65,7 +68,7 @@ CHECKPSW    DB      "HUNGRY$"
     ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
     ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
     ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
-    ; MOV     CX, 862                             ;NUMBER OF BYTES TO READ AT A TIME
+    ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
     ; LEA     DX, MMBUFFER                        ;BUFFER TO STORE THE CONTENT
     ; INT     21H
 
@@ -88,8 +91,9 @@ CHECKPSW    DB      "HUNGRY$"
     ;                 INT     21H
     ;                 JMP     EXIT
 
+    ;USER LOGIN
     ;ASK FOR USERNAME
-    LOGIN:  MOV     AH, 0AH                             ;DOS FUNCTION TO DISPLAY STRING
+    LOGIN:  MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
             LEA     DX, MSGUSER
             INT     21H
 
@@ -108,7 +112,7 @@ CHECKPSW    DB      "HUNGRY$"
             INT     21H                                 ;NEXT LINE
 
             ;ASK FOR PASSWORD
-            MOV     AH, 0AH                             ;DOS FUNCTION TO DISPLAY STRING
+            MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
             LEA     DX, MSGPSW
             INT     21H
 
@@ -127,25 +131,54 @@ CHECKPSW    DB      "HUNGRY$"
             INT     21H                                 ;NEXT LINE
 
     ;CHECK USERNAME AND PASSWORD
-    CMP     INUSER, CHECKUSER
-    CMP     INPSW, CHECKPSW
-    JE      MAINPAGE
+    ;COMPARE USERNAME LOOP
+    MOV     SI, 0                               ;STRING INDEX
+    USERCMP:    MOV     AL, INUSER[SI+2]        ;LOAD USER INPUT'S CHAR IN AL
+                MOV     BL, [CHECKUSER + SI]    ;LOAD ACTUAL USERNAME'S CHAR IN BL
+
+                CMP     AL, BL                  ;COMPARE THE 2 CHARACTERS
+
+                JNE     INVALIDLOGIN            ;IF USERNAME IS INVALID
+
+                CMP     AL, '$'                 ;CHECK FOR THE TERMINATOR IF STRING IS DONE
+                JE      PSWCMP                  ;IF USERNAME IS CORRECT, JUMP TO PSWCMP
+
+                INC     SI                      ;SI++
+                JMP     USERCMP                 ;LOOP AGAIN TO CHECK NEXT CHAR
+
+    ;COMPARE PASSWORD LOOP
+    PSWCMP:     MOV     SI, 0                   ;CHANGE SI BACK TO 0
+    PSWLOOP:    MOV     AL, INPSW[SI+2]         ;LOAD USER'S INPUT CHAR IN AL
+                MOV     BL, [CHECKPSW + SI]     ;LOAD ACTUAL USERNAME'S CHAR IN BL
+
+                CMP     AL, BL                  ;COMPARE THE 2 CHARACTERS
+
+                JNE     INVALIDLOGIN            ;IF PASSWORD IS INVALID
+
+                CMP     AL, '$'                 ;CHECK FOR THE TERMINATOR IF STRING IS DONE
+                JE      MAINPAGE                ;IF PASSWORD IS CORRECT, JUMP TO MAINPAGE
+
+                INC     SI                      ;SI++
+                JMP     PSWLOOP                 ;LOOP AGAIN TO CHECK NEXT CHAR
 
     ;WRONG USERNAME AND PASSWORD
-    MOV     AH, 0AH                             ;DOS FUNCTION TO DISPLAY STRING
-    LEA     DX, BADLOGIN
-    INT     21H
-    JMP     LOGIN
-
-    
+    INVALIDLOGIN:   MOV     AH, 09H             ;DOS FUNCTION TO DISPLAY STRING
+                    LEA     DX, BADLOGIN
+                    INT     21H
+                    JMP     LOGIN
 ;===================================END OF MAIN MENU===================================
 
 ;=================================START OF MAIN PAGE===================================
-    MAINPAGE:   MOV     AH, 0AH                       ;DOS FUNCTION TO DISPLAY STRING
+    MAINPAGE:   MOV     AH, 09H                 ;DOS FUNCTION TO DISPLAY STRING
                 LEA     DX, GOODLOGIN
                 INT     21H
-;==================================END OF MAIN PAGE====================================
 
+    
+;==================================END OF MAIN PAGE====================================
+;END OF MAIN PROGRAM
+;--------------------------------------------------------------------------------------
+
+;EXIT PROGRAM
 ;===================================START OF FOOTER====================================
     EXIT:   MOV     AX, 4C00H
             INT     21H
