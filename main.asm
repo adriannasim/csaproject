@@ -83,13 +83,8 @@ CHECKPSW    DB      "HUNGRY$"
     ; MOV     AH, 3EH                             
     ; MOV     BX, FILE_HANDLE                     
     ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
-    ; JMP     EXIT
 
-    ; ;ERROR HANDLER
-    ; FILE_ERROR:     MOV     AH, 09H
-    ;                 LEA     DX, ERRFILE
-    ;                 INT     21H
-    ;                 JMP     EXIT
+    ; JMP   NEWLINE                             ;NEXT LINE
 
     ;USER LOGIN
     ;ASK FOR USERNAME
@@ -105,11 +100,7 @@ CHECKPSW    DB      "HUNGRY$"
             MOVZX   BX, ACTUALUSER
             MOV     SPACEUSER[BX], '$'                  ;TERMINATE USER INPUT STRING WITH $
 
-            MOV     AH, 02H
-            MOV     DL, CR
-            INT     21H
-            MOV     DL, LF
-            INT     21H                                 ;NEXT LINE
+            CALL    NEWLINE                             ;NEXT LINE
 
             ;ASK FOR PASSWORD
             MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
@@ -124,11 +115,6 @@ CHECKPSW    DB      "HUNGRY$"
             MOVZX   BX, ACTUALPSW
             MOV     SPACEPSW[BX], '$'                   ;TERMINATE USER INPUT STRING WITH $
 
-            MOV     AH, 02H
-            MOV     DL, CR
-            INT     21H
-            MOV     DL, LF
-            INT     21H                                 ;NEXT LINE
 
     ;CHECK USERNAME AND PASSWORD
     ;COMPARE USERNAME LOOP
@@ -156,7 +142,7 @@ CHECKPSW    DB      "HUNGRY$"
                 JNE     INVALIDLOGIN            ;IF PASSWORD IS INVALID
 
                 CMP     AL, '$'                 ;CHECK FOR THE TERMINATOR IF STRING IS DONE
-                JE      MAINPAGE                ;IF PASSWORD IS CORRECT, JUMP TO MAINPAGE
+                JE      LOGGEDIN                ;IF PASSWORD IS CORRECT, JUMP TO MAINPAGE
 
                 INC     SI                      ;SI++
                 JMP     PSWLOOP                 ;LOOP AGAIN TO CHECK NEXT CHAR
@@ -175,6 +161,38 @@ CHECKPSW    DB      "HUNGRY$"
 
     
 ;==================================END OF MAIN PAGE====================================
+
+;===================================START OF FUNCTIONS=================================
+;NEW LINE
+    NEWLINE     PROC
+            MOV     AH, 02H
+            MOV     DL, LF
+            INT     21H
+            MOV     DL, CR
+            INT     21H
+            RET  
+    NEWLINE     ENDP                         
+
+;WAIT AROUND 2 SECONDS TO SIMULATE LOADING  
+    LOADING     PROC
+            MOV     CX, 5000                        ;LOADING DURATION
+    LOADINGLOOP:    DEC     CX
+                    JNZ     LOADINGLOOP             ;JUMP IF CX IS STILL NOT ZERO
+                    RET                             ;RETURN
+    LOADING     ENDP
+;CLEAR SCREEN
+    CLEARSCR    PROC
+            MOV     AH, 06H                 ;DOS FUNCTION TO SCROLL UP 
+            MOV     AL, 0                   ;CLEAR ENTIRE SCREEN
+            MOV     BH, 07H                 ;SET TEXT STYLE
+            MOV     CX, 0                   ;CLEAR CX REGISTER TO START AT LEFT COL
+            MOV     DX, 0                   ;CLEAR DX REGISTER TO START AT TOP ROW
+            MOV     CH, 24                  ;SET SCREEN SIZE BACK TO 80X30
+            MOV     CL, 79
+            INT     10H                     ;BIOS INTERRUPT
+            RET                             ;RETURN
+    CLEARSCR ENDP
+;===================================END OF FUNCTIONS===================================
 ;END OF MAIN PROGRAM
 ;--------------------------------------------------------------------------------------
 

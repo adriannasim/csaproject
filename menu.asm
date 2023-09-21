@@ -56,39 +56,32 @@ CHECKPSW    DB      "HUNGRY$"
 ;=================================START OF MAIN MENU==================================
     ;PRINT MENU
     ;OPEN THE FILE
-    ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
-    ; MOV     AL, 0                               ;READ-ONLY MODE
-    ; LEA     DX, MAINMENU                        ;LOAD THE FILENAME INTO DX
-    ; INT     21H
+    PRTMMENU:   ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+                ; MOV     AL, 0                               ;READ-ONLY MODE
+                ; LEA     DX, MAINMENU                        ;LOAD THE FILENAME INTO DX
+                ; INT     21H
 
-    ; JC      FILE_ERROR                          ;JUMP IF ERROR
+                ; JC      FILE_ERROR                          ;JUMP IF ERROR
 
-    ; ;READ THE FILE CONTENT
-    ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
-    ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
-    ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
-    ; MOV     CX, 862                             ;NUMBER OF BYTES TO READ AT A TIME
-    ; LEA     DX, MMBUFFER                        ;BUFFER TO STORE THE CONTENT
-    ; INT     21H
+                ; ;READ THE FILE CONTENT
+                ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+                ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+                ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+                ; MOV     CX, 862                             ;NUMBER OF BYTES TO READ AT A TIME
+                ; LEA     DX, MMBUFFER                        ;BUFFER TO STORE THE CONTENT
+                ; INT     21H
 
-    ; JC      FILE_ERROR                          ;JUMP IF ERROR
+                ; JC      FILE_ERROR                          ;JUMP IF ERROR
 
-    ; ;DISPLAY THE FILE CONTENT
-    ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
-    ; LEA     DX, MMBUFFER                        ;LOAD THE BUFFER ADDRESS
-    ; INT     21H
+                ; ;DISPLAY THE FILE CONTENT
+                ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+                ; LEA     DX, MMBUFFER                        ;LOAD THE BUFFER ADDRESS
+                ; INT     21H
 
-    ; ;CLOSE THE FILE
-    ; MOV     AH, 3EH                             
-    ; MOV     BX, FILE_HANDLE                     
-    ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
-    ; JMP     EXIT
-
-    ; ;ERROR HANDLER
-    ; FILE_ERROR:     MOV     AH, 09H
-    ;                 LEA     DX, ERRFILE
-    ;                 INT     21H
-    ;                 JMP     EXIT
+                ; ;CLOSE THE FILE
+                ; MOV     AH, 3EH                             
+                ; MOV     BX, FILE_HANDLE                     
+                ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
 
     ;USER LOGIN
     ;ASK FOR USERNAME
