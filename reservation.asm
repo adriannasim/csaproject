@@ -8,9 +8,9 @@ TITLE   ASSIGNMENT  MAINPROGRAM
 ;-------------------------------------------------------------------------------------
 ;START OF VARIABLES DECLARATION
 ;=================================READ FILE VARIABLES=================================
-;MAINPAGE
-MAINPAGE    DB      "mainpage.txt", 0       ;FILENAME
-MPBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+;RESERVATION MENU
+RESMENU     DB      "reservation.txt", 0    ;FILENAME
+RESBUFFER   DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 FILE_HANDLE DW      ?                       ;FILE HANDLE
 BYTESREAD   DW      0
 ;=================================NEW LINE VARIABLES==================================
@@ -34,20 +34,11 @@ CHOICE      DB      ?
     MOV     DS, AX                          ;SET ADDRESS OF DATA SEGMENT IN DS
 ;====================================END OF HEADER====================================
 
-;=================================START OF MAIN PAGE===================================
-    ;SHOW LOGIN SUCCESSFUL MSG
-    LOGGEDIN:   MOV     AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
-                LEA     DX, GOODLOGIN
-                INT     21H
-
-    ;LOAD AND CLEAR SCREEN
-    CALL     LOADING
-    CALL     CLEARSCR
-    ;PRINT MAINPAGE
-    ;OPEN THE FILE
-    PRTMAINPAGE:    ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+;=================================START OF RESERVATION=================================
+    ;PRINT RESERVATION MENU
+    RESERVATION:    ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
                     ; MOV     AL, 0                               ;READ-ONLY MODE
-                    ; LEA     DX, MAINPAGE                        ;LOAD THE FILENAME INTO DX
+                    ; LEA     DX, RESMENU                         ;LOAD THE FILENAME INTO DX
                     ; INT     21H
 
                     ; ;READ THE FILE CONTENT
@@ -55,21 +46,21 @@ CHOICE      DB      ?
                     ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
                     ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
                     ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
-                    ; LEA     DX, MPBUFFER                        ;BUFFER TO STORE THE CONTENT
+                    ; LEA     DX, RESBUFFER                       ;BUFFER TO STORE THE CONTENT
                     ; INT     21H
 
                     ; ;DISPLAY THE FILE CONTENT
                     ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
-                    ; LEA     DX, MPBUFFER                        ;LOAD THE BUFFER ADDRESS
+                    ; LEA     DX, RESBUFFER                       ;LOAD THE BUFFER ADDRESS
                     ; INT     21H
 
                     ; ;CLOSE THE FILE
                     ; MOV     AH, 3EH                             
                     ; MOV     BX, FILE_HANDLE                     
                     ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
-                    
-    CALL     NEWLINE
-    
+
+    CALL NEWLINE
+
     ;GET USER CHOICE INPUT
     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
 	LEA	    DX, CHOICEMSG
@@ -81,19 +72,20 @@ CHOICE      DB      ?
     MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
 
     CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
-    JE      RESERVATION                         ;JUMP TO RESERVATION PAGE
+    JE      CHECKRES                            ;JUMP TO CHECK RESERVATION
 
     CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
-    JE      FOODMENU                            ;JUMP TO FOODMENU
+    JE      MAKERES                             ;JUMP TO MAKE RESERVATION
 
     CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
-    JE 	    PRTMMENU                            ;RETURN BACK TO MAIN MENU
+    JE 	    PRTMAINPAGE                         ;RETURN BACK TO MAIN MENU
 
     MOV     AH, 09H                             ;IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG
     INT     21H
-    JMP     PRTMAINPAGE                         ;JUMP TO PRINT MAIN PAGE
-;==================================END OF MAIN PAGE====================================
+    JMP     RESERVATION                         ;JUMP TO PRINT MAIN PAGE
+
+;==================================END OF RESERVATION==================================
 
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE

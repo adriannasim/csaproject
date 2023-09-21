@@ -97,11 +97,7 @@ CHECKPSW    DB      "HUNGRY$"
             MOVZX   BX, ACTUALUSER
             MOV     SPACEUSER[BX], '$'                  ;TERMINATE USER INPUT STRING WITH $
 
-            MOV     AH, 02H
-            MOV     DL, CR
-            INT     21H
-            MOV     DL, LF
-            INT     21H                                 ;NEXT LINE
+            CALL   NEWLINE                              ;NEXT LINE
 
             ;ASK FOR PASSWORD
             MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING

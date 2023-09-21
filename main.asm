@@ -62,8 +62,6 @@ CHECKPSW    DB      "HUNGRY$"
     ; LEA     DX, MAINMENU                        ;LOAD THE FILENAME INTO DX
     ; INT     21H
 
-    ; JC      FILE_ERROR                          ;JUMP IF ERROR
-
     ; ;READ THE FILE CONTENT
     ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
     ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
@@ -71,8 +69,6 @@ CHECKPSW    DB      "HUNGRY$"
     ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
     ; LEA     DX, MMBUFFER                        ;BUFFER TO STORE THE CONTENT
     ; INT     21H
-
-    ; JC      FILE_ERROR                          ;JUMP IF ERROR
 
     ; ;DISPLAY THE FILE CONTENT
     ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
@@ -84,7 +80,7 @@ CHECKPSW    DB      "HUNGRY$"
     ; MOV     BX, FILE_HANDLE                     
     ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
 
-    ; JMP   NEWLINE                             ;NEXT LINE
+    ; CALL   NEWLINE                              ;NEXT LINE
 
     ;USER LOGIN
     ;ASK FOR USERNAME
