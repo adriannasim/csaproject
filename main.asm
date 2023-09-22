@@ -28,17 +28,20 @@ MRBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 INDIMENU    DB      "indires.txt", 0        ;FILENAME
 IMBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 
+FMENU       DB      "foodmenu.txt", 0	      ;FILENAME
+FMBUFFER    DB      900 DUP(?)               ;BUFFER TO STORE FILE CONTENT
+
 ;SET A MENU
-SETAMENU    DB      "seta.txt", 0           ;FILENAME
-SABUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+SETMENU1     DB      "seta.txt", 0            ;FILENAME
+SABUFFER     DB      900 DUP(?)               ;BUFFER TO STORE FILE CONTENT
 
 ;SET B MENU
-SETBMENU    DB      "setb.txt", 0           ;FILENAME
-SBBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+SETMENU2     DB      "setb.txt", 0            ;FILENAME
+SBBUFFER     DB      900 DUP(?)               ;BUFFER TO STORE FILE CONTENT
 
 ;SET C MENU
-SETCMENU    DB      "setc.txt", 0           ;FILENAME
-SCBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+SETMENU3     DB      "setc.txt", 0            ;FILENAME
+SCBUFFER     DB      900 DUP(?)               ;BUFFER TO STORE FILE CONTENT
 
 ;SUMMARY
 SUMSCR      DB      "summary.txt", 0        ;FILENAME
@@ -62,6 +65,7 @@ INVALIDMSG  DB      "INVALID CHOICE. PLEASE ENTER AGAIN", LF, CR, "$"
 ;FOR USER INPUT
 ;USER CHOICE SELECTION
 CHOICEMSG   DB      "INPUT YOUR CHOICE > $"
+RETURNMSG   DB      "ENTER '#' TO RETURN TO FOOD MENU > $"
 ;LOGIN INFO
 MSGUSER     DB      "USERNAME > $"
 MSGPSW      DB      "PASSWORD > $"
@@ -378,7 +382,213 @@ CHECKPSW    DB      "HUNGRY$"
     JMP     MAKERES                             ;JUMP TO PRINT MAIN PAGE
 
 ;=============================END OF MAKE RESERVATION PAGE=============================
+;==================================START OF FOOD MENU==================================
+;PRINT FOOD MENU
+FOODMENU:
+    MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+    MOV     AL, 0                               ;READ-ONLY MODE
+    LEA     DX, FMENU                           ;LOAD THE FILENAME INTO DX
+    INT     21H
 
+; read_file
+    MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+    MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+    MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+    MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+    LEA     DX, FMBUFFER                        ;BUFFER TO STORE THE CONTENT
+    INT     21H
+
+; display_menu
+    MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+    LEA     DX, FMBUFFER                        ;LOAD THE BUFFER ADDRESS
+    INT     21H
+
+; close_file
+    MOV     AH, 3EH                             
+    MOV     BX, FILE_HANDLE                     
+    INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+    
+    CALL NEWLINE
+
+;GET USER CHOICE INPUT
+    MOV     AH, 09H             ; DOS FUNCTION TO DISPLAY STRING
+    LEA     DX, CHOICEMSG
+    INT     21H
+
+    MOV     AH, 01H             ; READ CHARACTER FROM INPUT
+    INT     21H
+
+    MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
+
+    CMP     CHOICE, '1'         ; CHECK USER INPUT = '1'
+    JNE     CHECK_2             ; IF NOT '1', CHECK IF IT'S '2'
+    JMP     SET1                ; Jump to SET1
+
+CHECK_2:
+    CMP     CHOICE, '2'         ; CHECK USER INPUT = '2'
+    JNE     CHECK_3             ; IF NOT '2', CHECK IF IT'S '3'
+    JMP     SET2                ; Jump to SET2
+
+CHECK_3:
+    CMP     CHOICE, '3'         ; CHECK USER INPUT = '3'
+    JNE     CHECK_4     	; IF NOT '3', CHECK IF IT'S '4'
+    JMP     SET3                ; JUMP TO SET3
+
+CHECK_4:
+    CMP	    CHOICE, '4'		; CHECK USER INPUT = '4'
+    JNE     INVALID_CHOICE	; IF NOT '4', INVALID CHOICE
+    JMP     PRTMAINPAGE
+
+INVALID_CHOICE:
+    MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     FOODMENU         ; Jump to PRTFOODMENU
+
+;===============================START OF DISPLAY SET MENUS=================================
+;PRINT SET A
+SET1:    CALL NEWLINE     
+	  MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+    	  MOV     AL, 0                               ;READ-ONLY MODE
+    	  LEA     DX, SETMENU1                        ;LOAD THE FILENAME INTO DX
+   	  INT     21H
+
+; read_file
+    	  MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+    	  MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+     	  MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+   	  MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+    	  LEA     DX, SABUFFER                        ;BUFFER TO STORE THE CONTENT
+    	  INT     21H
+
+; display_menu
+    	  MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+    	  LEA     DX, SABUFFER                        ;LOAD THE BUFFER ADDRESS
+    	  INT     21H
+
+; close_file
+    	  MOV     AH, 3EH                             
+    	  MOV     BX, FILE_HANDLE                     
+    	  INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+    
+    CALL NEWLINE
+
+;GET USER CHOICE INPUT
+    MOV     AH, 09H             ; DOS FUNCTION TO DISPLAY STRING
+    LEA     DX, RETURNMSG
+    INT     21H
+
+    MOV     AH, 01H             ; READ CHARACTER FROM INPUT
+    INT     21H
+
+    MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
+
+    CMP     CHOICE, '#'         ; CHECK INPUT = '#'
+    JNE     INVALID_IN1		; CHECK WHETHER INVALID
+    JMP     FOODMENU            ; JUMP TO FOODMENU 
+
+INVALID_IN1:
+    MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     SET1 
+
+;PRINT SET B
+SET2:    CALL NEWLINE
+	 MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+    	 MOV     AL, 0                               ;READ-ONLY MODE
+   	 LEA     DX, SETMENU2                        ;LOAD THE FILENAME INTO DX
+    	 INT     21H
+
+; read_file
+   	 MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+  	 MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+   	 MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+    	 MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+    	 LEA     DX, SBBUFFER                        ;BUFFER TO STORE THE CONTENT
+    	 INT     21H
+
+; display_menu
+    	 MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+    	 LEA     DX, SBBUFFER                        ;LOAD THE BUFFER ADDRESS
+    	 INT     21H
+
+; close_file
+    	 MOV     AH, 3EH                             
+    	 MOV     BX, FILE_HANDLE                     
+    	 INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+    
+    CALL NEWLINE
+
+;GET USER CHOICE INPUT
+    	MOV	    AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
+	LEA	    DX, RETURNMSG
+	INT	    21H
+
+    	MOV     AH, 01H             ; READ CHARACTER FROM INPUT
+   	INT     21H
+
+    	MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
+
+    	CMP     CHOICE, '#'         ; CHECK INPUT = '#'
+    	JNE     INVALID_IN2         ; CHECK WHETHER INVALID
+    	JMP     FOODMENU            ; JUMP TO FOODMENU 
+
+INVALID_IN2:
+    MOV     AH, 09H                 ; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     SET2                    ;JUMP TO PRINT SET B
+
+;PRINT SET C
+SET3:    CALL NEWLINE
+	 MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+    	 MOV     AL, 0                               ;READ-ONLY MODE
+   	 LEA     DX, SETMENU3                        ;LOAD THE FILENAME INTO DX
+   	 INT     21H
+
+; read_file
+   	  MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+   	  MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+   	  MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+    	  MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+   	  LEA     DX, SCBUFFER                        ;BUFFER TO STORE THE CONTENT
+    	  INT     21H
+
+; display_menu
+    	  MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+   	  LEA     DX, SCBUFFER                        ;LOAD THE BUFFER ADDRESS
+    	  INT     21H
+
+; close_file
+    	  MOV     AH, 3EH                             
+    	  MOV     BX, FILE_HANDLE                     
+    	  INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+    
+    CALL NEWLINE
+
+;GET USER CHOICE INPUT
+    	MOV	    AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
+	LEA	    DX, RETURNMSG
+	INT	    21H
+
+    	MOV     AH, 01H             ; READ CHARACTER FROM INPUT
+    	INT     21H
+
+    	MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
+
+    	CMP     CHOICE, '#'         ; CHECK INPUT = '#'
+    	JNE     INVALID_IN3	    ; CHECK WHETHER INVALID
+    	JMP     FOODMENU            ; JUMP TO FOODMENU 
+
+INVALID_IN3:
+    MOV     AH, 09H                 ; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     SET3 
+
+;=================================END OF DISPLAY SET MENUS=============================
+;===================================END OF FOOD MENU===================================
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE
     NEWLINE     PROC
