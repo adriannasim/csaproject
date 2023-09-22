@@ -24,6 +24,13 @@ GOODLOGIN   DB      "LOGIN SUCCESSFUL", LF, CR, "$"
 BADLOGIN    DB      "WRONG USERNAME/PASSWORD. PLEASE TRY AGAIN.", LF, CR, "$"
 MSGUSER     DB      "USERNAME > $"
 MSGPSW      DB      "PASSWORD > $"
+EXITMSG     DB      "ARE YOU SURE YOU WANT TO QUIT? (Y/N) > $"
+
+;INVALID CHOICE
+INVALIDMSG  DB      "INVALID CHOICE. PLEASE ENTER AGAIN", LF, CR, "$"
+
+;======================================CHAR INPUT=====================================
+CHOICE      DB      ?
 
 ;===================================STRING INPUT======================================
 ;USERNAME
@@ -98,7 +105,15 @@ CHECKPSW    DB      "HUNGRY$"
             MOVZX   BX, ACTUALUSER
             MOV     SPACEUSER[BX], '$'                  ;TERMINATE USER INPUT STRING WITH $
 
-            CALL   NEWLINE                              ;NEXT LINE
+            CALL    NEWLINE                             ;NEXT LINE
+
+            ;CHECK IF USER WANTS TO QUIT
+            MOV     AL, INUSER[2]
+            CMP     AL, 'X'                             ;IF USER INPUT X
+            JE      EXIT1                               ;JUMP TO EXIT
+            CMP     AL, 'x'                             ;IF USER INPUT X
+            JE      EXIT1                               ;JUMP TO EXIT
+            MOV     AL, 0                               ;CLEAR AL
 
             ;ASK FOR PASSWORD
             MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
@@ -113,11 +128,15 @@ CHECKPSW    DB      "HUNGRY$"
             MOVZX   BX, ACTUALPSW
             MOV     SPACEPSW[BX], '$'                   ;TERMINATE USER INPUT STRING WITH $
 
-            MOV     AH, 02H
-            MOV     DL, CR
-            INT     21H
-            MOV     DL, LF
-            INT     21H                                 ;NEXT LINE
+            ;CHECK IF USER WANTS TO QUIT
+            MOV     AL, INPSW[2]
+            CMP     AL, 'X'                             ;IF USER INPUT X
+            JE      EXIT1                               ;JUMP TO EXIT
+            CMP     AL, 'x'                             ;IF USER INPUT X
+            JE      EXIT1                               ;JUMP TO EXIT
+            MOV     AL, 0                               ;CLEAR AL
+
+            CALL    NEWLINE
 
     ;CHECK USERNAME AND PASSWORD
     ;COMPARE USERNAME LOOP
@@ -157,6 +176,12 @@ CHECKPSW    DB      "HUNGRY$"
                     JMP     LOGIN
 ;===================================END OF MAIN MENU===================================
 
+;SHOW LOGIN SUCCESSFUL MSG
+    LOGGEDIN:   MOV     AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
+                LEA     DX, GOODLOGIN
+                INT     21H
+                JMP     EXIT
+
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE
     NEWLINE     PROC
@@ -186,6 +211,40 @@ CHECKPSW    DB      "HUNGRY$"
             INT     10H                     ;BIOS INTERRUPT
             RET                             ;RETURN
     CLEARSCR    ENDP
+
+;EXIT CONFIRMATION MESSAGE FOR LOGIN PAGE
+    EXIT1:  MOV     AH, 09H                 ;DOS FUNCTION TO DISPLAY STRING
+            LEA     DX, EXITMSG
+            INT     21H
+
+            MOV	    AH, 01H
+	        INT	    21H			             ;GET USER CHAR INPUT
+
+            MOV     CHOICE, AL
+            ;IF YES
+            CMP	    CHOICE,'Y'
+            CALL    NEWLINE
+            JE      EXIT
+            CMP	    CHOICE,'y'
+            CALL    NEWLINE
+            JE      EXIT
+
+            ;IF NO
+            CMP	    CHOICE,'N'
+            CALL    NEWLINE
+            JE      PRTMMENU
+            CMP	    CHOICE,'n'
+            CALL    NEWLINE
+            JE      PRTMMENU
+
+            CALL    NEWLINE
+
+            ;IF INVALID
+            MOV     AH, 09H                   ;IF INVALID CHOICE, PRINT INVALIDMSG
+            LEA     DX, INVALIDMSG
+            INT     21H
+            CALL    NEWLINE
+            JMP     EXIT1                     ;JUMP TO PRINT EXIT CONFIRMATION MESSAGE
 ;===================================END OF FUNCTIONS===================================
 
 ;===================================START OF FOOTER====================================

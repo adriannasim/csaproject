@@ -19,4 +19,6 @@
 ==================================================
     WELCOME TO MAPLE PALACE RESERVATION SYSTEM  
 ==================================================
-PLEASE LOGIN USING YOUR USERNAME AND PASSWORD:$
+PLEASE LOGIN USING YOUR USERNAME AND PASSWORD:
+
+               **TYPE 'X' TO EXIT**$
