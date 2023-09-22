@@ -44,6 +44,10 @@ SCBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 SUMSCR      DB      "summary.txt", 0        ;FILENAME
 SSBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 
+;EVENT RESERVATION MENU
+EVENTMENU   DB      "eventres.txt", 0       ;FILENAME
+EMBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+
 ;UNIVERSAL
 FILE_HANDLE DW      ?                       ;FILE HANDLE
 BYTESREAD   DW      0
@@ -56,12 +60,16 @@ BADLOGIN    DB      "WRONG USERNAME/PASSWORD. PLEASE TRY AGAIN.", LF, CR, "$"
 ;INVALID CHOICE
 INVALIDMSG  DB      "INVALID INPUT. PLEASE ENTER AGAIN", LF, CR, "$"
 ;SUMMARY
+EVENTDIS    DB      "SET ORDERED: $"
+EVENT       DB      "EVENT$"
+EVENTMEM    DB      "70.25$"
+EVENTXMEM   DB      "70.25$"
 SETMSG      DB      "SET ORDERED: $"
 NAMEDIS     DB      "CUSTOMER NAME: $"
 PAXDIS      DB      "PAX: $"
 DATEDIS     DB      "DATE: $"
 TIMEDIS     DB      "TIME: $"
-TOTALDIS    DB      "TOTAL: $"
+TOTALDIS    DB      "TOTAL: USD $"
 
 ;FOR USER INPUT
 ;USER CHOICE SELECTION
@@ -532,8 +540,42 @@ REMAINDER   DW      ?
                 ;DISPLAY SUMMARY
                 CALL    SUMMARY                 ;CALL SUMMARY FUNCTION
                 CALL    WRTRES                  ;CALL WRITE FILE FUCTION
-
+                JMP     MAKERES
 ;============================END OF INDIVIDUAL RESERVATION=============================
+
+;==============================START OF EVENT RESERVATION==============================
+    ;PRINT RESERVATION MENU
+    EVENTRES:       CALL    CLEARSCR
+                    MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+                    MOV     AL, 0                               ;READ-ONLY MODE
+                    LEA     DX, EVENTMENU                        ;LOAD THE FILENAME INTO DX
+                    INT     21H
+
+                    ;READ THE FILE CONTENT
+                    MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+                    MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+                    MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+                    MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+                    LEA     DX, EMBUFFER                        ;BUFFER TO STORE THE CONTENT
+                    INT     21H
+
+                    ;DISPLAY THE FILE CONTENT
+                    MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+                    LEA     DX, EMBUFFER                        ;LOAD THE BUFFER ADDRESS
+                    INT     21H
+
+                    ;CLOSE THE FILE
+                    MOV     AH, 3EH                             
+                    MOV     BX, FILE_HANDLE                     
+                    INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+    CALL NEWLINE
+
+        CALL    EDETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS       
+        CALL    CHKEMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
+        CALL    WRTRES                  ;CALL WRITE FILE FUCTION
+        JMP     MAKERES
+
+;===============================END OF EVENT RESERVATION===============================
 
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE
@@ -626,7 +668,7 @@ REMAINDER   DW      ?
             JMP     CHOOSE                  ;GO BACK TO ASKING FOR PAX
     INVALIDPAX      ENDP
 
-;GET DETAILS NAME AND PAX
+;GET DETAILS
     DETAILS    PROC
             MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
             LEA     DX, NAMEMSG
@@ -896,6 +938,198 @@ REMAINDER   DW      ?
             RET             ;RETURN ONCE DONE DISPLAYING      
     SUMMARY     ENDP
 
+;GET EVENT DETAILS
+    EDETAILS    PROC
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, NAMEMSG
+            INT     21H
+
+            MOV     AH, 0AH                 ;DOS FUNCTION TO ACCEPT STRING
+            LEA     DX, INNAME
+            INT     21H
+
+            .386                            ;CALL FOR ADVANCE FUNCTION
+            MOVZX   BX, ACTUALNAME
+            MOV     SPACENAME[BX], '$'      ;TERMINATE USER INPUT STRING WITH $
+
+            CALL    NEWLINE
+
+            ;DATE
+            MOV     AX, 0                   ;CLEAR AX
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, DATEMSG
+            INT     21H
+
+            MOV     AH, 0AH                 ;DOS FUNCTION TO ACCEPT STRING
+            LEA     DX, INDATE
+            INT     21H
+
+            .386                            ;CALL FOR ADVANCE FUNCTION
+            MOVZX   BX, ACTUALDATE
+            MOV     SPACEDATE[BX], '$'      ;TERMINATE USER INPUT STRING WITH $
+
+            CALL    NEWLINE
+
+            ;TIME
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, TIMEMSG
+            INT     21H
+
+            MOV     AH, 0AH                 ;DOS FUNCTION TO ACCEPT STRING
+            LEA     DX, INTIME
+            INT     21H
+
+            .386                            ;CALL FOR ADVANCE FUNCTION
+            MOVZX   BX, ACTUALTIME
+            MOV     SPACETIME[BX], '$'      ;TERMINATE USER INPUT STRING WITH $
+
+            CALL    NEWLINE
+
+            RET
+    EDETAILS    ENDP
+
+;CHECK MEMBER FOR EVENT
+    CHKEMEM      PROC
+    MEMLOOP:    MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+                LEA     DX, MEMBERMSG
+                INT     21H
+
+                MOV	    AH, 01H
+                INT	    21H			            ;GET USER CHAR INPUT
+
+                MOV     MEMBER, AL              ;STORE USER INPUT TO MEMBER
+
+                CALL    NEWLINE
+
+                ;IF CUSTOMER IS A MEMBER
+                CMP     MEMBER, 'Y'
+                JE      GOTEMEM                  ;JUMP TO CALCULATION WITH MEMBER DISCOUNT
+                CMP     MEMBER, 'y'
+                JE      GOTEMEM                  ;JUMP TO CALCULATION WITH MEMBER DISCOUNT
+
+                ;IF CUSTOMER IS A MEMBER
+                CMP     MEMBER, 'N'
+                JE      NOEMEM                   ;JUMP TO CALCULATION WITH MEMBER DISCOUNT
+                CMP     MEMBER, 'n'
+                JE      NOEMEM                   ;JUMP TO CALCULATION WITH MEMBER DISCOUNT
+
+                ;INVALID INPUT
+                MOV     AH, 09H                 ;IF INVALID CHOICE, PRINT INVALIDMSG
+                LEA     DX, INVALIDMSG
+                INT     21H
+                CALL    NEWLINE
+                JMP     MEMLOOP                 ;JUMP TO MEMLOOP
+
+    ;HAS MEMBER
+    GOTEMEM:    CALL    CLEARSCR
+                CALL    ESUMMARY                 ;CALL SUMMARY FUNCTION
+                ;TOTAL
+                MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+                LEA     DX, EVENTMEM
+                INT     21H 
+                RET
+
+    ;NO MEMBER
+    NOEMEM:     CALL    CLEARSCR
+                CALL    ESUMMARY                 ;CALL SUMMARY FUNCTION
+                ;TOTAL
+                MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+                LEA     DX, EVENTXMEM
+                INT     21H 
+                RET
+    CHKEMEM      ENDP
+
+;PRINT EVENT SUMMARY
+    ESUMMARY     PROC
+            ;SPASH SCREEN
+            ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+            ; MOV     AL, 0                               ;READ-ONLY MODE
+            ; LEA     DX, SUMSCR                          ;LOAD THE FILENAME INTO DX
+            ; INT     21H
+
+            ; ;READ THE FILE CONTENT
+            ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+            ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+            ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+            ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+            ; LEA     DX, SSBUFFER                        ;BUFFER TO STORE THE CONTENT
+            ; INT     21H
+
+            ; ;DISPLAY THE FILE CONTENT
+            ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+            ; LEA     DX, SSBUFFER                        ;LOAD THE BUFFER ADDRESS
+            ; INT     21H
+
+            ; ;CLOSE THE FILE
+            ; MOV     AH, 3EH                             
+            ; MOV     BX, FILE_HANDLE                     
+            ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+
+            ;ORDERED SET
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, SETMSG
+            INT     21H
+
+            MOV     DX, 0                   ;CLEAR DX
+            MOV     AH, 02H                 ;DOS FUNCTION FOR DISPLAY CHAR
+            MOV     DL, ORDSET
+            INT     21H
+
+            CALL    NEWLINE
+
+            ;NAME
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, NAMEDIS
+            INT     21H
+
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, SPACENAME
+            INT     21H
+
+            CALL   NEWLINE                  ;NEXT LINE
+
+            ;PAX
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, PAXDIS
+            INT     21H
+
+            MOV     DX, 0                   ;CLEAR DX
+            MOV     AH, 02H                 ;DOS FUNCTION FOR DISPLAY CHAR
+            MOV     DL, PAX
+            INT     21H
+
+            CALL   NEWLINE                  ;NEXT LINE
+
+            ;DATE
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, DATEDIS
+            INT     21H
+
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, SPACEDATE
+            INT     21H
+
+            CALL   NEWLINE                  ;NEXT LINE
+
+            ;TIME
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, TIMEDIS
+            INT     21H
+
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, SPACETIME
+            INT     21H
+
+            CALL    NEWLINE
+
+            ;TOTAL AMOUNT
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, TOTALDIS
+            INT     21H
+            
+            RET             ;RETURN ONCE DONE DISPLAYING      
+    ESUMMARY     ENDP
+
 ;WRITE RESERVATION TO FILE
     WRITERES    PROC
             MOV     AH, 3CH               ;DOS FUNCTION TO CREATE A FILE
@@ -914,10 +1148,17 @@ REMAINDER   DW      ?
             ;NAME
             MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
             MOV     BX, AX                    ;FILE HANDLER
-            MOV     CX, 20                    ;LENGTH OF DATA TO WRITE
+            MOV     CX, LENGTHOF SPACENAME    ;LENGTH OF DATA TO WRITE
             LEA     DX, ACTUALNAME            ;ADDRESS OF DATA TO WRITE
             INT     21H
 
+            ;SET ORDERED
+            MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
+            MOV     BX, AX                    ;FILE HANDLER
+            MOV     CX, LENGTHOF ORDSET       ;LENGTH OF DATA TO WRITE
+            LEA     DX, ORDSET                ;ADDRESS OF DATA TO WRITE
+            INT     21H
+            
             ;PAX
             MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
             MOV     BX, AX                    ;FILE HANDLER
@@ -944,6 +1185,8 @@ REMAINDER   DW      ?
             INT     21H                   ;DOS FUNCTION TO CLOSE A FILE
             RET
     WRITERES    ENDP
+
+    
 ;===================================END OF FUNCTIONS===================================
 ;END OF MAIN PROGRAM
 ;--------------------------------------------------------------------------------------
