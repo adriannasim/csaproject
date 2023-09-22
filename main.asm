@@ -541,6 +541,7 @@ REMAINDER   DW      ?
 ;==================================START OF FOOD MENU==================================
 ;PRINT FOOD MENU
 FOODMENU:
+    CALL NEWLINE
     MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
     MOV     AL, 0                               ;READ-ONLY MODE
     LEA     DX, FMENU                           ;LOAD THE FILENAME INTO DX
