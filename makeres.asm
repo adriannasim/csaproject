@@ -8,7 +8,7 @@ TITLE   ASSIGNMENT  MAINPROGRAM
 ;-------------------------------------------------------------------------------------
 ;START OF VARIABLES DECLARATION
 ;=================================READ FILE VARIABLES=================================
-;MAINPAGE
+;MAKERES
 MAKEMENU    DB      "makeres.txt", 0        ;FILENAME
 MRBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 FILE_HANDLE DW      ?                       ;FILE HANDLE
@@ -34,7 +34,7 @@ CHOICE      DB      ?
     MOV     DS, AX                          ;SET ADDRESS OF DATA SEGMENT IN DS
 ;====================================END OF HEADER====================================
 
-;=================================START OF RESERVATION=================================
+;===========================START OF MAKE RESERVATION PAGE============================
     ;PRINT RESERVATION MENU
     MAKERES:        ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
                     ; MOV     AL, 0                               ;READ-ONLY MODE
@@ -85,7 +85,7 @@ CHOICE      DB      ?
     INT     21H
     JMP     MAKERES                             ;JUMP TO PRINT MAIN PAGE
 
-;==================================END OF RESERVATION==================================
+;=============================END OF MAKE RESERVATION PAGE=============================
 
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE

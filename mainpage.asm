@@ -117,14 +117,13 @@ CHOICE      DB      ?
     CLEARSCR    PROC
             MOV     AH, 06H                 ;DOS FUNCTION TO SCROLL UP 
             MOV     AL, 0                   ;CLEAR ENTIRE SCREEN
-            MOV     BH, 07H                 ;SET TEXT STYLE
-            MOV     CX, 0                   ;CLEAR CX REGISTER TO START AT LEFT COL
-            MOV     DX, 0                   ;CLEAR DX REGISTER TO START AT TOP ROW
-            MOV     CH, 24                  ;SET SCREEN SIZE BACK TO 80X30
-            MOV     CL, 79
+            MOV     BH, 07H                 ;DISPLAY PAGE 0
+            MOV     CX, 0                   ;CLEAR CX REGISTER TO START AT LEFT COL AND TOP ROW
+            MOV     DX, 184FH               ;SET SCREEN SIZE BACK TO 80X30
+            
             INT     10H                     ;BIOS INTERRUPT
             RET                             ;RETURN
-    CLEARSCR ENDP
+    CLEARSCR    ENDP
 ;===================================END OF FUNCTIONS===================================
 
 ;===================================START OF FOOTER====================================
