@@ -28,6 +28,18 @@ MRBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 INDIMENU    DB      "indires.txt", 0        ;FILENAME
 IMBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 
+;SET A MENU
+SETAMENU    DB      "seta.txt", 0           ;FILENAME
+SABUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+
+;SET B MENU
+SETBMENU    DB      "setb.txt", 0           ;FILENAME
+SBBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+
+;SET C MENU
+SETCMENU    DB      "setc.txt", 0           ;FILENAME
+SCBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+
 ;SUMMARY
 SUMSCR      DB      "summary.txt", 0        ;FILENAME
 SSBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
@@ -152,7 +164,7 @@ REMAINDER   DW      ?
                 LEA     DX, MAINMENU                        ;LOAD THE FILENAME INTO DX
                 INT     21H
 
-                JC      FILE_ERROR                          ;JUMP IF ERROR
+                CALL      FILE_ERROR                          ;JUMP IF ERROR
 
                 ;READ THE FILE CONTENT
                 MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
@@ -162,7 +174,7 @@ REMAINDER   DW      ?
                 LEA     DX, MMBUFFER                        ;BUFFER TO STORE THE CONTENT
                 INT     21H
 
-                JC      FILE_ERROR                          ;JUMP IF ERROR
+                CALL      FILE_ERROR                          ;JUMP IF ERROR
 
                 ;DISPLAY THE FILE CONTENT
                 MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING

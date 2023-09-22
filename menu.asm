@@ -17,7 +17,7 @@ BYTESREAD   DW      0
 ;=================================NEW LINE VARIABLES==================================
 CR          EQU     0DH                     ;CARRIAGE RETURN SHORT FORM
 LF          EQU     0AH                     ;LINE FEED SHORT FORM
-
+NEWLINE	    DB 	    13, 10, '$'		    ;NEWLINE STRING
 ;=================================PRINTING VARIABLES==================================
 ERRFILE     DB      "FILE ERROR$"
 GOODLOGIN   DB      "LOGIN SUCCESSFUL", LF, CR, "$"
@@ -105,7 +105,9 @@ CHECKPSW    DB      "HUNGRY$"
             MOVZX   BX, ACTUALUSER
             MOV     SPACEUSER[BX], '$'                  ;TERMINATE USER INPUT STRING WITH $
 
-            CALL    NEWLINE                             ;NEXT LINE
+            MOV	    AH , 9
+	    MOV	    DX , OFFSET NEWLINE                 ;NEXT LINE
+	    INT     21H 
 
             ;CHECK IF USER WANTS TO QUIT
             MOV     AL, INUSER[2]
