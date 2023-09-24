@@ -60,6 +60,12 @@ SBBUFFER     DB      1500 DUP(?)            ;BUFFER TO STORE FILE CONTENT
 SETMENU3     DB      "setc.txt", 0          ;FILENAME
 SCBUFFER     DB      1500 DUP(?)            ;BUFFER TO STORE FILE CONTENT
 
+EVENTFM     DB      "evntmenu.txt", 0	      ;FILENAME
+EFBUFFER    DB      900 DUP(?)               ;BUFFER TO STORE FILE CONTENT
+
+WEDDINGFM   DB      "wedfmenu.txt", 0	      ;FILENAME
+WFBUFFER    DB      900 DUP(?)               ;BUFFER TO STORE FILE CONTENT
+
 ;UNIVERSAL
 FILE_HANDLE DW      ?                       ;FILE HANDLE
 BYTESREAD   DW      0
@@ -642,6 +648,38 @@ INVALID_IN3:
 
     CALL NEWLINE
 
+;GET USER CHOICE INPUT
+ERLOOP:				; EVENT RESERVATION INPUT LOOP
+    MOV     AH, 09H             ; DOS FUNCTION TO DISPLAY STRING
+    LEA     DX, CHOICEMSG
+    INT     21H
+
+    MOV     AH, 01H             ; READ CHARACTER FROM INPUT
+    INT     21H
+
+    MOV     CHOICE, AL          ; MOVE INPUT FROM AL TO CHOICE
+
+    CMP     CHOICE, '1'         ; CHECK IF INPUT = '1'
+    JNE     CHECK2              ; IF NOT '1', CHECK IF ITS '2'
+    JMP     PRTEVTMENU          ; JUMP TO PRINT EVENT FOOD MENU
+
+CHECK2:
+    CMP     CHOICE, '2'         ; CHECK IF INPUT = '2'
+    JNE     CHECK3              ; IF NOT '2', CHECK IF ITS '3'
+    JMP     PRTWEDMENU          ; JUMP TO PRINT WEDDING MENU
+
+CHECK3:
+    CMP     CHOICE, '3'         ; CHECK IF INPUT = '3'
+    JNE     INVALIDCHOICE	; IF NOT '3', CHECK IF ITS INVALID
+    JMP     MAKERES	        ; JUMP BACK TO MAKE RESERVATIONS 
+
+INVALIDCHOICE:
+    CALL    NEWLINE
+    MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     ERLOOP         	; JUMP TO VERIFY INPUT
+
     ;GET USER CHOICE INPUT
     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
 	LEA	    DX, CHOICEMSG
@@ -666,14 +704,116 @@ INVALID_IN3:
     INT     21H
     JMP     RESERVATION                         ;JUMP TO PRINT MAIN PAGE
 
-;==================================END OF RESERVATION==================================
+;=============================START OF EVENT MENU DISPLAY==============================
 
-;===========================START OF MAKE RESERVATION PAGE============================
-    ;PRINT MAKE RESERVATION MENU
-    MAKERES:        MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
-                    MOV     AL, 0                               ;READ-ONLY MODE
-                    LEA     DX, MAKEMENU                        ;LOAD THE FILENAME INTO DX
-                    INT     21H
+PRTEVTMENU: 
+	  CALL NEWLINE     
+	  MOV     AH, 3DH                       ;DOS FUNCTION TO OPEN A FILE
+    	  MOV     AL, 0                         ;READ-ONLY MODE
+    	  LEA     DX, EVENTFM                   ;LOAD THE FILENAME INTO DX
+   	  INT     21H
+
+; read_file
+    	  MOV     FILE_HANDLE, AX               ;STORE THE FILE HANDLE
+    	  MOV     AH, 3FH                       ;DOS FUNCTION TO READ FROM A FILE
+     	  MOV     BX, FILE_HANDLE               ;FILE HANDLE
+   	  MOV     CX, 900                       ;NUMBER OF BYTES TO READ AT A TIME
+    	  LEA     DX, EFBUFFER                  ;BUFFER TO STORE THE CONTENT
+    	  INT     21H
+
+; display_menu
+    	  MOV     AH, 09H                       ;DOS FUNCTION TO DISPLAY A STRING
+    	  LEA     DX, EFBUFFER                  ;LOAD THE BUFFER ADDRESS
+    	  INT     21H
+
+; close_file
+    	  MOV     AH, 3EH                             
+    	  MOV     BX, FILE_HANDLE                     
+    	  INT     21H                           ;DOS FUNCTION TO CLOSE A FILE
+
+CALL	NEWLINE
+
+;GET USER CHOICE INPUT
+EMLOOP:						;EVENT MENU INPUT LOOP
+    	MOV	    AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
+	LEA	    DX, RETURNMSG
+	INT	    21H
+
+    	MOV	    AH, 01H
+	INT	    21H			        ;GET USER CHAR
+
+	MOV     CHOICE, AL                      ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
+
+	CMP     CHOICE, '#'         		; CHECK IF INPUT = '#'
+    	JNE     INVALID_IN4			; CHECK IF ITS INVALID
+    	JMP     EVENTRES         		; JUMP TO EVENT RESERVATION
+
+INVALID_IN4:
+    CALL    NEWLINE
+    MOV     AH, 09H             		; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     EMLOOP 				; JUMP TO VERIFY INPUT
+
+PRTWEDMENU: 
+	  CALL NEWLINE     
+	  MOV     AH, 3DH                       ;DOS FUNCTION TO OPEN A FILE
+    	  MOV     AL, 0                         ;READ-ONLY MODE
+    	  LEA     DX, WEDDINGFM                 ;LOAD THE FILENAME INTO DX
+   	  INT     21H
+
+; read_file
+    	  MOV     FILE_HANDLE, AX               ;STORE THE FILE HANDLE
+    	  MOV     AH, 3FH                       ;DOS FUNCTION TO READ FROM A FILE
+     	  MOV     BX, FILE_HANDLE               ;FILE HANDLE
+   	  MOV     CX, 900                       ;NUMBER OF BYTES TO READ AT A TIME
+    	  LEA     DX, WFBUFFER                  ;BUFFER TO STORE THE CONTENT
+    	  INT     21H
+
+; display_menu
+    	  MOV     AH, 09H                       ;DOS FUNCTION TO DISPLAY A STRING
+    	  LEA     DX, WFBUFFER                  ;LOAD THE BUFFER ADDRESS
+    	  INT     21H
+
+; close_file
+    	  MOV     AH, 3EH                             
+    	  MOV     BX, FILE_HANDLE                     
+    	  INT     21H                           ;DOS FUNCTION TO CLOSE A FILE
+
+CALL	NEWLINE
+
+;GET USER CHOICE INPUT
+WMLOOP:						;WEDDING MENU INPUT LOOP				
+    	MOV	    AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
+	LEA	    DX, RETURNMSG
+	INT	    21H
+
+    	MOV	    AH, 01H
+	INT	    21H			        ;GET USER CHAR
+
+	MOV     CHOICE, AL                      ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
+
+	CMP     CHOICE, '#'         		; CHECK IF INPUT = '#'
+    	JNE     INVALID_IN5			; CHECK IF ITS INVALID
+    	JMP     EVENTRES         		; JUMP TO EVENT RESERVATION
+	
+INVALID_IN5:
+    CALL    NEWLINE
+    MOV     AH, 09H             		; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     WMLOOP 				; JUMP TO VERIFY INPUT
+
+;==============================END OF EVENT MENU DISPLAY=============================
+;===============================END OF EVENT RESERVATION===============================
+;==================================START OF FOOD MENU==================================
+;PRINT FOOD MENU
+FOODMENU:
+    CALL NEWLINE
+    MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+    MOV     AL, 0                               ;READ-ONLY MODE
+    LEA     DX, FMENU                           ;LOAD THE FILENAME INTO DX
+    INT     21H
 
                     ;READ THE FILE CONTENT
                     MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
@@ -695,29 +835,41 @@ INVALID_IN3:
 
     CALL NEWLINE
 
-    ;GET USER CHOICE INPUT
-    MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
-	LEA	    DX, CHOICEMSG
-	INT	    21H
+;GET USER CHOICE INPUT
+FMLOOP:
+    MOV     AH, 09H             ; DOS FUNCTION TO DISPLAY STRING
+    LEA     DX, CHOICEMSG
+    INT     21H
 
     MOV	    AH, 01H
 	INT	    21H			                        ;GET USER CHAR INPUT
 
     MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
 
-    CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
-    JE      INDIRES                             ;JUMP TO INDIVIDUAL RESERVATION PAGE
+    CMP     CHOICE, '1'         ; CHECK USER INPUT = '1'
+    JNE     CHECK_2             ; IF NOT '1', CHECK IF IT'S '2'
+    JMP     SET1                ; Jump to SET1
 
-    CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
-    JE      EVENTRES                            ;JUMP TO EVENT RESERVATION PAGE
+CHECK_2:
+    CMP     CHOICE, '2'         ; CHECK USER INPUT = '2'
+    JNE     CHECK_3             ; IF NOT '2', CHECK IF IT'S '3'
+    JMP     SET2                ; Jump to SET2
 
-    CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
-    JE 	    RESERVATION                         ;RETURN BACK TO MAIN MENU
+CHECK_3:
+    CMP     CHOICE, '3'         ; CHECK USER INPUT = '3'
+    JNE     CHECK_4     	; IF NOT '3', CHECK IF IT'S '4'
+    JMP     SET3                ; JUMP TO SET3
 
-    MOV     AH, 09H                             ;IF INVALID CHOICE, PRINT INVALIDMSG
+CHECK_4:
+    CMP	    CHOICE, '4'		; CHECK USER INPUT = '4'
+    JNE     INVALID_CHOICE	; IF NOT '4', INVALID CHOICE
+    JMP     PRTMAINPAGE
+
+INVALID_CHOICE:
+    MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG
     INT     21H
-    JMP     MAKERES                             ;JUMP TO PRINT MAIN PAGE
+    JMP     FOODMENU         ; Jump to PRTFOODMENU
 
 ;=============================END OF MAKE RESERVATION PAGE=============================
 
@@ -748,9 +900,7 @@ INVALID_IN3:
 
     CALL NEWLINE
 
-    CALL PRTCHKRES
-
-    ;GET USER CHOICE INPUT
+;GET USER CHOICE INPUT
     MOV     AH, 09H             ; DOS FUNCTION TO DISPLAY STRING
     LEA     DX, RETURNMSG
     INT     21H
@@ -763,12 +913,11 @@ INVALID_IN3:
     CMP     CHOICE, '#'         ; CHECK INPUT = '#'
     JE      RESERVATION 		;JUMP TO RESERVATION
 
-    MOV     AH, 09H                             ;IF INVALID CHOICE, PRINT INVALIDMSG
+INVALID_IN1:
+    MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG
     INT     21H
-    CALL    CLEARSCR
-    JMP     PRTCHK                         ;JUMP TO PRINT MAIN PAGE
-;===============================END OF CHECK RESERVATION===============================
+    JMP     SET1 
 
 ;===========================START OF INDIVIDUAL RESERVATION===========================
     ;PRINT RESERVATION MENU
@@ -798,85 +947,32 @@ INVALID_IN3:
 
     CALL NEWLINE
 
-    ;GET USER CHOICE INPUT
-    CHOOSE:     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
-                LEA	    DX, CHOICEMSG
-                INT	    21H
+;GET USER CHOICE INPUT
+    	MOV	    AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
+	LEA	    DX, RETURNMSG
+	INT	    21H
 
-                MOV	    AH, 01H
-                INT	    21H			                        ;GET USER CHAR INPUT
+    	MOV     AH, 01H             ; READ CHARACTER FROM INPUT
+   	INT     21H
 
-                MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
+    	MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
 
-                CALL    NEWLINE
+    	CMP     CHOICE, '#'         ; CHECK INPUT = '#'
+    	JNE     INVALID_IN2         ; CHECK WHETHER INVALID
+    	JMP     FOODMENU            ; JUMP TO FOODMENU 
 
-    INDISET:    CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
-                MOV     ORDSET, 'A'                         ;STORE ORDSET AS A
-                JE      INDIA                               ;JUMP TO SET A
+INVALID_IN2:
+    MOV     AH, 09H                 ; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     SET2                    ;JUMP TO PRINT SET B
 
-                CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
-                MOV     ORDSET, 'B'                         ;STORE ORDSET AS B
-                JE      INDIB                               ;JUMP TO SET B
-
-                CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
-                MOV     ORDSET, 'C'                         ;STORE ORDSET AS C
-                JE      INDIC                               ;JUMP TO SET C
-
-    CMP     CHOICE, '4'                         ;CHECK IF USER INPUT IS 4
-    JE 	    MAKERES                             ;RETURN BACK TO MAIN MENU
-
-    CALL    INVALID
-    JMP     INDIRES                             ;JUMP TO PRINT INDIVIDUAL RESERVATION PAGE
-
-    ;SET MENUS
-    ;SET MENU 1
-    INDIA:      CALL    GETPAX                  ;GET PAX
-
-                MOV     AH, 0                   ;CLEAR AH
-                MUL     ASET                    ;PAX * SET A PRICE
-                MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
-
-                CALL    NEWLINE
-                CALL    CHKMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-                CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
-
-                JMP     DISSUM
-                
-    ;SET MENU 2
-    INDIB:      CALL    GETPAX                  ;GET PAX
-
-                MOV     AH, 0                   ;CLEAR AH
-                MUL     BSET                    ;PAX * SET B PRICE
-                MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
-                
-                CALL    NEWLINE
-                CALL    CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-                CALL    DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
-                
-                JMP     DISSUM
-
-    ;SET MENU 3
-    INDIC:      CALL    GETPAX                  ;GET PAX
-
-                MOV     AH, 0                   ;CLEAR AH
-                MUL     CSET                    ;PAX * SET C PRICE
-                MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
-                
-                CALL    NEWLINE
-                CALL    CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-                CALL    DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
-                
-                JMP     DISSUM
-
-;============================END OF INDIVIDUAL RESERVATION=============================
-
-;==============================START OF EVENT RESERVATION==============================
-    ;PRINT RESERVATION MENU
-    EVENTRES:       CALL    CLEARSCR
-                    MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
-                    MOV     AL, 0                               ;READ-ONLY MODE
-                    LEA     DX, EVENTMENU                        ;LOAD THE FILENAME INTO DX
-                    INT     21H
+;PRINT SET C
+SET3:    CALL NEWLINE
+	 MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+    	 MOV     AL, 0                               ;READ-ONLY MODE
+   	 LEA     DX, SETMENU3                        ;LOAD THE FILENAME INTO DX
+   	 INT     21H
 
                     ;READ THE FILE CONTENT
                     MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
@@ -898,60 +994,28 @@ INVALID_IN3:
     
                     CALL NEWLINE
 
-    ;GET USER CHOICE INPUT
-    ECHOOSE:     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
-                    LEA	    DX, CHOICEMSG
-                    INT	    21H
+;GET USER CHOICE INPUT
+    	MOV	    AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
+	LEA	    DX, RETURNMSG
+	INT	    21H
 
                     MOV	    AH, 01H
                     INT	    21H			                        ;GET USER CHAR INPUT
 
                     MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
 
-                    CALL    NEWLINE
+    	CMP     CHOICE, '#'         ; CHECK INPUT = '#'
+    	JNE     INVALID_IN3	    ; CHECK WHETHER INVALID
+    	JMP     FOODMENU            ; JUMP TO FOODMENU 
 
-    ETYPE:  CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
-            MOV     ORDSET, 'E'                          ;STORE EVENT TYPE AS E
-            JE      EV                                  ;JUMP TO SET A
+INVALID_IN3:
+    MOV     AH, 09H                 ; IF INVALID CHOICE, PRINT INVALIDMSG
+    LEA     DX, INVALIDMSG
+    INT     21H
+    JMP     SET3 
 
-            CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
-            MOV     ORDSET, 'W'                          ;STORE EVENT TYPE AS W
-            JE      WED                                 ;JUMP TO SET B
-
-            CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
-            JE 	    MAKERES                             ;RETURN BACK TO MAIN MENU
-
-    CALL    INVALID
-    JMP     EVENTRES                           ;JUMP TO PRINT EVENT RESERVATION PAGE
-
-    EV:     CALL    GETTAB                  ;GET TABLE QTY
-            
-            MOV     AH, 0                   ;CLEAR AH
-            MUL     EPRICE
-            MOV     TOTAL, AX
-
-            CALL    NEWLINE
-            CALL    CHKMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-            CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS       
-            JMP     DISSUM
-
-    WED:    CALL    GETTAB                  ;GET TABLE QTY
-            
-            MOV     AH, 0                   ;CLEAR AH
-            MUL     WPRICE
-            MOV     TOTAL, AX
-
-            CALL    NEWLINE
-            CALL    CHKMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-            CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS       
-
-    DISSUM: CALL    CLEARSCR
-            ;DISPLAY SUMMARY
-            CALL    SUMMARY                 ;CALL SUMMARY FUNCTION
-            CALL    WRITERES                ;CALL WRITE FILE FUCTION
-            JMP     EXIT
-
-;===============================END OF EVENT RESERVATION===============================
+;=================================END OF DISPLAY SET MENUS=============================
+;===================================END OF FOOD MENU===================================
 
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE
