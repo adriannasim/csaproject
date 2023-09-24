@@ -127,107 +127,107 @@ REMAINDER   DW      ?
     MOV     DS, AX                          ;SET ADDRESS OF DATA SEGMENT IN DS
 ;====================================END OF HEADER====================================
 
-; ;===========================START OF INDIVIDUAL RESERVATION===========================
-;     ;PRINT RESERVATION MENU
-;     INDIRES:        CALL    CLEARSCR
-;                     ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
-;                     ; MOV     AL, 0                               ;READ-ONLY MODE
-;                     ; LEA     DX, INDIMENU                        ;LOAD THE FILENAME INTO DX
-;                     ; INT     21H
+;===========================START OF INDIVIDUAL RESERVATION===========================
+    ;PRINT RESERVATION MENU
+    INDIRES:        CALL    CLEARSCR
+                    ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+                    ; MOV     AL, 0                               ;READ-ONLY MODE
+                    ; LEA     DX, INDIMENU                        ;LOAD THE FILENAME INTO DX
+                    ; INT     21H
 
-;                     ; ;READ THE FILE CONTENT
-;                     ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
-;                     ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
-;                     ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
-;                     ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
-;                     ; LEA     DX, IMBUFFER                        ;BUFFER TO STORE THE CONTENT
-;                     ; INT     21H
+                    ; ;READ THE FILE CONTENT
+                    ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+                    ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+                    ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+                    ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+                    ; LEA     DX, IMBUFFER                        ;BUFFER TO STORE THE CONTENT
+                    ; INT     21H
 
-;                     ; ;DISPLAY THE FILE CONTENT
-;                     ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
-;                     ; LEA     DX, IMBUFFER                        ;LOAD THE BUFFER ADDRESS
-;                     ; INT     21H
+                    ; ;DISPLAY THE FILE CONTENT
+                    ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+                    ; LEA     DX, IMBUFFER                        ;LOAD THE BUFFER ADDRESS
+                    ; INT     21H
 
-;                     ; ;CLOSE THE FILE
-;                     ; MOV     AH, 3EH                             
-;                     ; MOV     BX, FILE_HANDLE                     
-;                     ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+                    ; ;CLOSE THE FILE
+                    ; MOV     AH, 3EH                             
+                    ; MOV     BX, FILE_HANDLE                     
+                    ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
 
-;     CALL NEWLINE
+    CALL NEWLINE
 
-;     ;GET USER CHOICE INPUT
-;     CHOOSE:     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
-;                 LEA	    DX, CHOICEMSG
-;                 INT	    21H
+    ;GET USER CHOICE INPUT
+    CHOOSE:     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
+                LEA	    DX, CHOICEMSG
+                INT	    21H
 
-;                 MOV	    AH, 01H
-;                 INT	    21H			                        ;GET USER CHAR INPUT
+                MOV	    AH, 01H
+                INT	    21H			                        ;GET USER CHAR INPUT
 
-;                 MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
+                MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
 
-;                 CALL    NEWLINE
+                CALL    NEWLINE
 
-;     INDISET:    CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
-;                 MOV     ORDSET, 'A'                         ;STORE ORDSET AS A
-;                 JE      INDIA                               ;JUMP TO SET A
+    INDISET:    CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
+                MOV     ORDSET, 'A'                         ;STORE ORDSET AS A
+                JE      INDIA                               ;JUMP TO SET A
 
-;                 CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
-;                 MOV     ORDSET, 'B'                         ;STORE ORDSET AS B
-;                 JE      INDIB                               ;JUMP TO SET B
+                CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
+                MOV     ORDSET, 'B'                         ;STORE ORDSET AS B
+                JE      INDIB                               ;JUMP TO SET B
 
-;                 CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
-;                 MOV     ORDSET, 'C'                         ;STORE ORDSET AS C
-;                 JE      INDIC                               ;JUMP TO SET C
+                CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
+                MOV     ORDSET, 'C'                         ;STORE ORDSET AS C
+                JE      INDIC                               ;JUMP TO SET C
 
-;     CMP     CHOICE, '4'                         ;CHECK IF USER INPUT IS 4
-;     ;JE 	    MAKERES                             ;RETURN BACK TO MAIN MENU
+    CMP     CHOICE, '4'                         ;CHECK IF USER INPUT IS 4
+    ;JE 	    MAKERES                             ;RETURN BACK TO MAIN MENU
 
-;     CALL    INVALID
-;     JMP     INDIRES                             ;JUMP TO PRINT INDIVIDUAL RESERVATION PAGE
+    CALL    INVALID
+    JMP     INDIRES                             ;JUMP TO PRINT INDIVIDUAL RESERVATION PAGE
 
-;     ;SET MENUS
-;     ;SET MENU 1
-;     INDIA:      CALL    GETPAX                  ;GET PAX
+    ;SET MENUS
+    ;SET MENU 1
+    INDIA:      CALL    GETPAX                  ;GET PAX
 
-;                 MOV     AH, 0                   ;CLEAR AH
-;                 MUL     ASET                    ;PAX * SET A PRICE
-;                 MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
+                MOV     AH, 0                   ;CLEAR AH
+                MUL     ASET                    ;PAX * SET A PRICE
+                MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
 
-;                 CALL    NEWLINE
-;                 CALL    CHKMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-;                 CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
+                CALL    NEWLINE
+                CALL    CHKMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
+                CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
 
-;                 JMP     DISSUM
+                JMP     DISSUM
                 
-;     ;SET MENU 2
-;     INDIB:      CALL    GETPAX                  ;GET PAX
+    ;SET MENU 2
+    INDIB:      CALL    GETPAX                  ;GET PAX
 
-;                 MOV     AH, 0                   ;CLEAR AH
-;                 MUL     BSET                    ;PAX * SET B PRICE
-;                 MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
+                MOV     AH, 0                   ;CLEAR AH
+                MUL     BSET                    ;PAX * SET B PRICE
+                MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
                 
-;                 CALL    NEWLINE
-;                 CALL    CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-;                 CALL    DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
+                CALL    NEWLINE
+                CALL    CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
+                CALL    DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
                 
-;                 JMP     DISSUM
+                JMP     DISSUM
 
-;     ;SET MENU 3
-;     INDIC:      CALL    GETPAX                  ;GET PAX
+    ;SET MENU 3
+    INDIC:      CALL    GETPAX                  ;GET PAX
 
-;                 MOV     AH, 0                   ;CLEAR AH
-;                 MUL     CSET                    ;PAX * SET C PRICE
-;                 MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
+                MOV     AH, 0                   ;CLEAR AH
+                MUL     CSET                    ;PAX * SET C PRICE
+                MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
                 
-;                 CALL    NEWLINE
-;                 CALL    CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-;                 CALL    DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
+                CALL    NEWLINE
+                CALL    CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
+                CALL    DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
                 
-;                 JMP     DISSUM
+                JMP     DISSUM
        
-;     ;JMP     MAKERES
+    ;JMP     MAKERES
 
-; ;============================END OF INDIVIDUAL RESERVATION=============================
+;============================END OF INDIVIDUAL RESERVATION=============================
 
 ;==============================START OF EVENT RESERVATION==============================
     ;PRINT RESERVATION MENU

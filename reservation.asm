@@ -72,13 +72,13 @@ CHOICE      DB      ?
     MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
 
     CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
-    JE      CHECKRES                            ;JUMP TO CHECK RESERVATION
+    ;JE      CHECKRES                            ;JUMP TO CHECK RESERVATION
 
     CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
-    JE      MAKERES                             ;JUMP TO MAKE RESERVATION
+    ;JE      MAKERES                             ;JUMP TO MAKE RESERVATION
 
     CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
-    JE 	    PRTMAINPAGE                         ;RETURN BACK TO MAIN MENU
+    ;JE 	    PRTMAINPAGE                         ;RETURN BACK TO MAIN MENU
 
     MOV     AH, 09H                             ;IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG

@@ -105,9 +105,7 @@ CHECKPSW    DB      "HUNGRY$"
             MOVZX   BX, ACTUALUSER
             MOV     SPACEUSER[BX], '$'                  ;TERMINATE USER INPUT STRING WITH $
 
-            MOV	    AH , 9
-	        MOV	    DX , OFFSET NEWLINE                 ;NEXT LINE
-	        INT     21H 
+            CALL    NEWLINE
 
             ;CHECK IF USER WANTS TO QUIT
             MOV     AL, INUSER[2]
