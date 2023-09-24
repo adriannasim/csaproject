@@ -9,20 +9,42 @@ TITLE   ASSIGNMENT  MAINPROGRAM
 ;START OF VARIABLES DECLARATION
 ;=================================READ FILE VARIABLES=================================
 ;CHECK RESERVATION MENU
-CHKMENU     DB      "checkres.txt", 0    ;FILENAME
+CHKMENU     DB      "checkres.txt", 0       ;FILENAME
 CHKBUFFER   DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 FILE_HANDLE DW      ?                       ;FILE HANDLE
 BYTESREAD   DW      0
+;================================WRITE FILE VARIABLES=================================
+RESFILE     DB      "resfile.txt", 0        ;FILENAME
+RFBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 ;=================================NEW LINE VARIABLES==================================
 CR          EQU     0DH                     ;CARRIAGE RETURN SHORT FORM
 LF          EQU     0AH                     ;LINE FEED SHORT FORM
+NL          DB      13, 10, "$"             ;NEW LINE FOR FILE
 ;=================================PRINTING VARIABLES==================================
 CHOICEMSG   DB      "INPUT YOUR CHOICE > $"
 INVALIDMSG  DB      "INVALID CHOICE. PLEASE ENTER AGAIN", LF, CR, "$"
+RETURNMSG   DB      "ENTER '#' TO RETURN TO FOOD MENU > $"
 
 CUSTNO      DB      "CUSTOMER NO. $"
+
+;SUMMARY
+EVENTDIS    DB      "FUNCTION RESERVED: $"
+SETDIS      DB      "SET ORDERED: $"
+NAMEDIS     DB      "CUSTOMER NAME: $"
+PAXDIS      DB      "PAX: $"
+TABLEDIS    DB      "NO. OF TABLES: $"
+DATEDIS     DB      "DATE: $"
+TIMEDIS     DB      "TIME: $"
+TOTALDIS    DB      "TOTAL: USD $"
+
 ;======================================CHAR INPUT=====================================
 CHOICE      DB      ?
+
+;==================================STRING VARIABLES===================================
+;DISPLAY FULL NAME FOR EVENT
+WEDDIS      DB      "WEDDING$"
+EVTDIS      DB      "EVENT$"
+
 ;END OF VARIABLES DECLARATION
 ;-------------------------------------------------------------------------------------
 ;==================================START OF HEADER====================================
@@ -34,228 +56,34 @@ CHOICE      DB      ?
     MOV     DS, AX                          ;SET ADDRESS OF DATA SEGMENT IN DS
 ;====================================END OF HEADER====================================
 
-;=================================START OF RESERVATION=================================
-    ;PRINT RESERVATION MENU
-    PRTCHK:         ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
-                    ; MOV     AL, 0                               ;READ-ONLY MODE
-                    ; LEA     DX, CHKMENU                         ;LOAD THE FILENAME INTO DX
-                    ; INT     21H
+;=============================START OF CHECK RESERVATION==============================
+    ;PRINT CHECK RESERVATION MENU
+    PRTCHK:         MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+                    MOV     AL, 0                               ;READ-ONLY MODE
+                    LEA     DX, CHKMENU                         ;LOAD THE FILENAME INTO DX
+                    INT     21H
 
-                    ; ;READ THE FILE CONTENT
-                    ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
-                    ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
-                    ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
-                    ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
-                    ; LEA     DX, CHKBUFFER                       ;BUFFER TO STORE THE CONTENT
-                    ; INT     21H
+                    ;READ THE FILE CONTENT
+                    MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+                    MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+                    MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+                    MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+                    LEA     DX, CHKBUFFER                       ;BUFFER TO STORE THE CONTENT
+                    INT     21H
 
-                    ; ;DISPLAY THE FILE CONTENT
-                    ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
-                    ; LEA     DX, RESBUFFER                       ;LOAD THE BUFFER ADDRESS
-                    ; INT     21H
+                    ;DISPLAY THE FILE CONTENT
+                    MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+                    LEA     DX, CHKBUFFER                       ;LOAD THE BUFFER ADDRESS
+                    INT     21H
 
-                    ; ;CLOSE THE FILE
-                    ; MOV     AH, 3EH                             
-                    ; MOV     BX, FILE_HANDLE                     
-                    ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+                    ;CLOSE THE FILE
+                    MOV     AH, 3EH                             
+                    MOV     BX, FILE_HANDLE                     
+                    INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
 
     CALL NEWLINE
 
-    ;PRINT FILE CONTENT
-    ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
-    ; MOV     AL, 0                               ;READ-ONLY MODE
-    ; LEA     DX, RESFILE                         ;LOAD THE FILENAME INTO DX
-    ; INT     21H
-
-    ; MOV     BX, FILE_HANDLE                       ;FILE HANDLE
-
-    ;READ FILE LOOP
-    MOV     SI, 1                   ;DECLARE SI TO DISPLAY CUST NO
-    ; NEXTCUST:   MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, CUSTNO
-    ;             INT     21H
-
-    ;             MOV     AH, 02H                 ;DOS FUNCTION FOR DISPLAY CHAR
-    ;             LEA     DL, SI                  ;DISPLAY CUST NO
-    ;             INT     21H
-    ;             INC     SI
-
-    ;             MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, NAMEDIS
-    ;             INT     21H
-
-    ;NAMELOOP:   MOV     AH, 3FH                                ;DOS FUNCTION TO READ FROM FILE
-                ; MOV     CX, 1                                 ;READ ONE CHAR
-                ; LEA     DX, RFBUFFER                          ;BUFFER TO STORE THE CONTENT
-                ; INT     21H
-                
-                ;CHECK FOR CONCAT CHAR
-                ; CMP     BYTE PTR [RFBUFFER], '~'              ;CHECK FOR CONCAT
-                ; JE      ORDERLOOP                             ;JUMP TO PRINT RESERVERED TYPE
-                
-                ; ;DISPLAY THE CHAR
-                ; MOV     AH, 02H                               ;DOS FUNCTION TO DISPLAY A STRING
-                ; LEA     DL, RFBUFFER                          ;LOAD THE BUFFER ADDRESS
-                ; INT     21H
-                ; JMP     NAMELOOP
-
-    ;ORDERLOOP:  MOV     AH, 3FH                                ;DOS FUNCTION TO READ FROM FILE
-                ; MOV     CX, 1                                 ;READ ONE CHAR
-                ; LEA     DX, RFBUFFER                          ;BUFFER TO STORE THE CONTENT
-                ; INT     21H
-
-                ; CMP     BYTE PTR [RFBUFFER], 'E'              ;CHECK IF IS EVENT
-                ; JE      DISPLAYE                              ;JUMP TO DISPLAY EVENT 
-                ; CMP     BYTE PTR [RFBUFFER], 'W'              ;CHECK IF IS WEDDING
-                ; JE      DISPLAYW                              ;JUMP TO DISPLAY WEDDING 
-                
-                ;CHECK FOR CONCAT CHAR
-                ; CMP     BYTE PTR [RFBUFFER], '~'              ;CHECK FOR CONCAT
-                ; JE      PAXLOOP                             ;JUMP TO PRINT RESERVERED TYPE
-                 
-    ;             MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, SETDIS
-    ;             INT     21H
-
-                ; ;DISPLAY THE CHAR
-                ; MOV     AH, 02H                               ;DOS FUNCTION TO DISPLAY A STRING
-                ; LEA     DL, RFBUFFER                          ;LOAD THE BUFFER ADDRESS
-                ; INT     21H
-                ; JMP     ORDERLOOP    
-    
-    ;PAXLOOP:    MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, PAXDIS
-    ;             INT     21H
-
-                ; MOV     AH, 3FH                                ;DOS FUNCTION TO READ FROM FILE
-                ; MOV     CX, 1                                 ;READ ONE CHAR
-                ; LEA     DX, RFBUFFER                          ;BUFFER TO STORE THE CONTENT
-                ; INT     21H
-                
-                ;CHECK FOR CONCAT CHAR
-                ; CMP     BYTE PTR [RFBUFFER], '~'              ;CHECK FOR CONCAT
-                ; JE      DATELOOP                              ;JUMP TO PRINT RESERVERED TYPE
-                
-                ; ;DISPLAY THE CHAR
-                ; MOV     AH, 02H                               ;DOS FUNCTION TO DISPLAY A STRING
-                ; LEA     DL, RFBUFFER                          ;LOAD THE BUFFER ADDRESS
-                ; INT     21H
-                ; JMP     PAXLOOP
-
-    
-    ;DISPLAYE:   MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;            LEA     DX, EVENTDIS
-    ;            INT     21H
-
-    ;             MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, EVTDIS
-    ;             INT     21H
-                 ;JMP     TABLELOOP
-                 
-    ;DISPLAYW:   MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;            LEA     DX, EVENTDIS
-    ;            INT     21H
-
-    ;             MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, WEDDIS
-    ;             INT     21H
-                 ;JMP     TABLELOOP
-    
-    ;TABLELOOP:   MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, TABLEDIS
-    ;             INT     21H
-
-                ; MOV     AH, 3FH                                ;DOS FUNCTION TO READ FROM FILE
-                ; MOV     CX, 1                                 ;READ ONE CHAR
-                ; LEA     DX, RFBUFFER                          ;BUFFER TO STORE THE CONTENT
-                ; INT     21H
-                
-                ;CHECK FOR CONCAT CHAR
-                ; CMP     BYTE PTR [RFBUFFER], '~'              ;CHECK FOR CONCAT
-                ; JE      DATELOOP                              ;JUMP TO PRINT RESERVERED TYPE
-                
-                ; ;DISPLAY THE CHAR
-                ; MOV     AH, 02H                               ;DOS FUNCTION TO DISPLAY A STRING
-                ; LEA     DL, RFBUFFER                          ;LOAD THE BUFFER ADDRESS
-                ; INT     21H
-                ; JMP     TABLELOOP    
-    
-    ;DATELOOP:  MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, DATEDIS
-    ;             INT     21H
-
-                 ;MOV     AH, 3FH                                ;DOS FUNCTION TO READ FROM FILE
-                ; MOV     CX, 1                                 ;READ ONE CHAR
-                ; LEA     DX, RFBUFFER                          ;BUFFER TO STORE THE CONTENT
-                ; INT     21H
-                
-                ;CHECK FOR CONCAT CHAR
-                ; CMP     BYTE PTR [RFBUFFER], '~'              ;CHECK FOR CONCAT
-                ; JE      ORDER                                 ;JUMP TO PRINT RESERVERED TYPE
-                
-                ; ;DISPLAY THE CHAR
-                ; MOV     AH, 02H                               ;DOS FUNCTION TO DISPLAY A STRING
-                ; LEA     DL, RFBUFFER                          ;LOAD THE BUFFER ADDRESS
-                ; INT     21H
-                ; JMP     NAMELOOP    
-
-    ;TIMELOOP:   MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, TIMEDIS
-    ;             INT     21H
-
-                ; MOV     AH, 3FH                                ;DOS FUNCTION TO READ FROM FILE
-                ; MOV     CX, 1                                 ;READ ONE CHAR
-                ; LEA     DX, RFBUFFER                          ;BUFFER TO STORE THE CONTENT
-                ; INT     21H
-                
-                ;CHECK FOR CONCAT CHAR
-                ; CMP     BYTE PTR [RFBUFFER], '~'              ;CHECK FOR CONCAT
-                ; JE      ORDER                                 ;JUMP TO PRINT RESERVERED TYPE
-                
-                ; ;DISPLAY THE CHAR
-                ; MOV     AH, 02H                               ;DOS FUNCTION TO DISPLAY A STRING
-                ; LEA     DL, RFBUFFER                          ;LOAD THE BUFFER ADDRESS
-                ; INT     21H
-                ; JMP     NAMELOOP    
-
-    ;TOTALLOOP:  MOV     AH, 09H                               ;DOS FUNCTION FOR DISPLAY STRING
-    ;             LEA     DX, TOTALDIS
-    ;             INT     21H
-
-    ;            MOV     AH, 3FH                                ;DOS FUNCTION TO READ FROM FILE
-                ; MOV     CX, 1                                 ;READ ONE CHAR
-                ; LEA     DX, RFBUFFER                          ;BUFFER TO STORE THE CONTENT
-                ; INT     21H
-                
-                ;CHECK FOR CONCAT CHAR
-                ; CMP     BYTE PTR [RFBUFFER], '~'              ;CHECK FOR CONCAT
-                ; JE      ORDER                                 ;JUMP TO PRINT RESERVERED TYPE
-                
-                ; ;DISPLAY THE CHAR
-                ; MOV     AH, 02H                               ;DOS FUNCTION TO DISPLAY A STRING
-                ; LEA     DL, RFBUFFER                          ;LOAD THE BUFFER ADDRESS
-                ; INT     21H
-                ; JMP     GONEXT
-
-    ;GONEXT:     MOV     AH, 3FH                                ;DOS FUNCTION TO READ FROM FILE
-                ; MOV     CX, 2                                 ;READ TWO CHAR
-                ; LEA     DX, RFBUFFER                          ;BUFFER TO STORE THE CONTENT
-                ; INT     21H
-                
-                ;CHECK FOR NEXTLINE
-                ; CMP     BYTE PTR [RFBUFFER], 0A0DH
-                ; JE      DONEDIS
-
-                ; ;DISPLAY LF AND CR
-                ; MOV     AH, 09H                               ;DOS FUNCTION TO DISPLAY A STRING
-                ; LEA     DX, RFBUFFER                          ;LOAD THE BUFFER ADDRESS
-                ; INT     21H
-                ; JMP     NEXTCUST
-
-    ;DONEDIS:   ; ;CLOSE THE FILE
-                ; MOV     AH, 3EH                             
-                ; MOV     BX, FILE_HANDLE                     
-                ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+    CALL PRTCHKRES
 
     ;GET USER CHOICE INPUT
     MOV     AH, 09H             ; DOS FUNCTION TO DISPLAY STRING
@@ -268,7 +96,7 @@ CHOICE      DB      ?
     MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
 
     CMP     CHOICE, '#'         ; CHECK INPUT = '#'
-    JE      RESERVATION 		;JUMP TO RESERVATION
+    ;JE      RESERVATION 		;JUMP TO RESERVATION
 
     MOV     AH, 09H                             ;IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG
@@ -276,7 +104,7 @@ CHOICE      DB      ?
     CALL    CLEARSCR
     JMP     PRTCHK                         ;JUMP TO PRINT MAIN PAGE
 
-;==================================END OF RESERVATION==================================
+;===============================END OF CHECK RESERVATION===============================
 
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE
@@ -296,6 +124,7 @@ CHOICE      DB      ?
                     JNZ     LOADINGLOOP             ;JUMP IF CX IS STILL NOT ZERO
                     RET                             ;RETURN
     LOADING     ENDP
+
 ;CLEAR SCREEN
     CLEARSCR    PROC
             MOV     AH, 06H                 ;DOS FUNCTION TO SCROLL UP 
@@ -308,7 +137,7 @@ CHOICE      DB      ?
             RET                             ;RETURN
     CLEARSCR    ENDP
 
-    ;INVALID MSG
+;INVALID MSG
     INVALID     PROC
             MOV     AH, 09H                 ;IF INVALID CHOICE, PRINT INVALIDMSG
             LEA     DX, INVALIDMSG
@@ -321,7 +150,7 @@ CHOICE      DB      ?
     INVALID     ENDP
 
 ;PRINT ALL RESERVATIONS
-    PRTCHKRES   PROC NEAR
+PRTCHKRES   PROC NEAR
     ;PRINT FILE CONTENT
     MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
     MOV     AL, 0                               ;READ-ONLY MODE

@@ -702,6 +702,13 @@ CLSERR      DB      "CLOSE ERROR$"
                         JMP     WRTTOL
                         
             FINTOL:
+            ;CONCAT
+            MOV     AX, 0               ;CLEAR AX
+            MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
+            MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            MOV     CX, 1                     ;LENGTH OF DATA TO WRITE
+            LEA     DX, CONCAT                   ;ADDRESS OF DATA TO WRITE
+            INT     21H
 
             ;NEXTLINE
             MOV     AX, 0                   ;CLEAR AX
