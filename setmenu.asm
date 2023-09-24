@@ -2,7 +2,7 @@
 .STACK	64
 .DATA
 
-FOODMENU     DB      "foodmenu.txt", 0	      ;FILENAME
+FMENU     DB      "foodmenu.txt", 0	      ;FILENAME
 FMBUFFER     DB      900 DUP(?)               ;BUFFER TO STORE FILE CONTENT
 
 SETMENU1     DB      "seta.txt", 0            ;FILENAME
@@ -39,11 +39,12 @@ CHOICE      DB      ?
 	MOV     AX, @DATA
 	MOV     DS, AX
   
-;PRINT MENU
-PRTFMENU:
+;PRINT FOOD MENU
+FOODMENU:
+    CALL NEWLINE
     MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
     MOV     AL, 0                               ;READ-ONLY MODE
-    LEA     DX, FOODMENU                        ;LOAD THE FILENAME INTO DX
+    LEA     DX, FMENU                           ;LOAD THE FILENAME INTO DX
     INT     21H
 
 ; read_file
@@ -67,34 +68,41 @@ PRTFMENU:
     CALL NEWLINE
 
 ;GET USER CHOICE INPUT
+FMLOOP:
     MOV     AH, 09H             ; DOS FUNCTION TO DISPLAY STRING
     LEA     DX, CHOICEMSG
     INT     21H
 
-    MOV     AH, 01H             ; Read a character from input
+    MOV     AH, 01H             ; READ CHARACTER FROM INPUT
     INT     21H
 
-    MOV     CHOICE, AL          ; Move user input from AL to CHOICE
+    MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
 
-    CMP     CHOICE, '1'         ; Check if user input is '1'
-    JNE     CHECK_2             ; If not '1', check if it's '2'
+    CMP     CHOICE, '1'         ; CHECK USER INPUT = '1'
+    JNE     CHECK_2             ; IF NOT '1', CHECK IF IT'S '2'
     JMP     SET1                ; Jump to SET1
 
 CHECK_2:
-    CMP     CHOICE, '2'         ; Check if user input is '2'
-    JNE     CHECK_3             ; If not '2', check if it's '3'
+    CMP     CHOICE, '2'         ; CHECK USER INPUT = '2'
+    JNE     CHECK_3             ; IF NOT '2', CHECK IF IT'S '3'
     JMP     SET2                ; Jump to SET2
 
 CHECK_3:
-    CMP     CHOICE, '3'         ; Check if user input is '3'
-    JNE     INVALID_CHOICE      ; If not '3', it's an invalid choice
-    JMP     SET3                ; Jump to SET3
+    CMP     CHOICE, '3'         ; CHECK USER INPUT = '3'
+    JNE     CHECK_4     	; IF NOT '3', CHECK IF IT'S '4'
+    JMP     SET3                ; JUMP TO SET3
+
+CHECK_4:
+    CMP	    CHOICE, '4'		; CHECK USER INPUT = '4'
+    JNE     INVALID_CHOICE	; IF NOT '4', INVALID CHOICE
+    JMP     PRTMAINPAGE
 
 INVALID_CHOICE:
+    CALL    NEWLINE
     MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG
     INT     21H
-    JMP     PRTFMENU         ; Jump to PRTFOODMENU
+    JMP     FMLOOP         	; JUMP TO VALIDATE INPUT
 ;===============================START OF DISPLAY SET MENUS============================
 ;PRINT SET A
 SET1:    CALL NEWLINE     
@@ -124,24 +132,26 @@ SET1:    CALL NEWLINE
     CALL NEWLINE
 
 ;GET USER CHOICE INPUT
+S1LOOP:
     MOV     AH, 09H             ; DOS FUNCTION TO DISPLAY STRING
     LEA     DX, RETURNMSG
     INT     21H
 
-    MOV     AH, 01H             ; Read a character from input
+    MOV     AH, 01H             ; READ CHARACTER FROM INPUT
     INT     21H
 
-    MOV     CHOICE, AL          ; Move user input from AL to CHOICE
+    MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
 
-    CMP     CHOICE, '#'         ; Check if user input is '#'
-    JNE     INVALID_IN1		; Check if its invalid
-    JMP     PRTFMENU         ; Jump to PRTFOODMENU to return to the food menu
+    CMP     CHOICE, '#'         ; CHECK INPUT = '#'
+    JNE     INVALID_IN1		; CHECK WHETHER INVALID
+    JMP     FOODMENU            ; JUMP TO FOODMENU 
 
 INVALID_IN1:
+    CALL    NEWLINE
     MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG
     INT     21H
-    JMP     SET1 
+    JMP     S1LOOP		; JUMP TO VALIDATE INPUT 
 
 ;PRINT SET B
 SET2:    CALL NEWLINE
@@ -171,24 +181,26 @@ SET2:    CALL NEWLINE
     CALL NEWLINE
 
 ;GET USER CHOICE INPUT
+S2LOOP:
     	MOV	    AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
 	LEA	    DX, RETURNMSG
 	INT	    21H
 
-    	MOV	    AH, 01H
-	INT	    21H			         ;GET USER CHAR
+    	MOV     AH, 01H             ; READ CHARACTER FROM INPUT
+   	INT     21H
 
-	MOV     CHOICE, AL                       ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
+    	MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
 
- 	CMP     CHOICE, '#'         ; Check if user input is '#'
-   	JNE     INVALID_IN2		; Check if its invalid
-    	JMP     PRTFMENU         ; Jump to PRTFOODMENU to return to the food menu
+    	CMP     CHOICE, '#'         ; CHECK INPUT = '#'
+    	JNE     INVALID_IN2         ; CHECK WHETHER INVALID
+    	JMP     FOODMENU            ; JUMP TO FOODMENU 
 
 INVALID_IN2:
-    MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
+    CALL    NEWLINE
+    MOV     AH, 09H                 ; IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG
     INT     21H
-    JMP     SET2                         ;JUMP TO PRINT SET B
+    JMP     S2LOOP                  ; JUMP TO VERIFY INPUT
 
 ;PRINT SET C
 SET3:    CALL NEWLINE
@@ -218,24 +230,26 @@ SET3:    CALL NEWLINE
     CALL NEWLINE
 
 ;GET USER CHOICE INPUT
+S3LOOP: 
     	MOV	    AH, 09H                     ;DOS FUNCTION TO DISPLAY STRING
 	LEA	    DX, RETURNMSG
 	INT	    21H
 
-    	MOV	    AH, 01H
-	INT	    21H			         ;GET USER CHAR
+    	MOV     AH, 01H             ; READ CHARACTER FROM INPUT
+    	INT     21H
 
-	MOV     CHOICE, AL                       ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
+    	MOV     CHOICE, AL          ; MOVE USER INPUT FROM AL TO CHOICE
 
-	CMP     CHOICE, '#'         ; Check if user input is '#'
-    	JNE     INVALID_IN3		; Check if its invalid
-    	JMP     PRTFMENU         ; Jump to PRTFOODMENU to return to the food menu
+    	CMP     CHOICE, '#'         ; CHECK INPUT = '#'
+    	JNE     INVALID_IN3	    ; CHECK WHETHER INVALID
+    	JMP     FOODMENU            ; JUMP TO FOODMENU 
 
 INVALID_IN3:
-    MOV     AH, 09H             ; IF INVALID CHOICE, PRINT INVALIDMSG
+    CALL    NEWLINE
+    MOV     AH, 09H                 ; IF INVALID CHOICE, PRINT INVALIDMSG
     LEA     DX, INVALIDMSG
     INT     21H
-    JMP     SET3 
+    JMP     S3LOOP		    ; JUMP TO VERIFY INPUT 
 
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE
