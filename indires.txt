@@ -22,5 +22,6 @@
 CHOOSE SET MENU:
 1. SET A
 2. SET B
-3. RETURN
+3. SET C
+4. RETURN
 ==================================================$

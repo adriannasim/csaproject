@@ -12,6 +12,10 @@ TITLE   ASSIGNMENT  MAINPROGRAM
 INDIMENU    DB      "indires.txt", 0        ;FILENAME
 IMBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 
+;EVENT RESERVATION MENU
+EVENTMENU   DB      "eventres.txt", 0       ;FILENAME
+EMBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
+
 ;SUMMARY
 SUMSCR      DB      "summary.txt", 0        ;FILENAME
 SSBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
@@ -20,7 +24,8 @@ SSBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 FILE_HANDLE DW      ?                       ;FILE HANDLE
 BYTESREAD   DW      0
 ;================================WRITE FILE VARIABLES=================================
-RFBUFFER    EQU      100                    ;BUFFER TO STORE FILE CONTENT
+RESFILE     DB      "resfile.txt", 0        ;FILENAME
+RFBUFFER    DB      900 DUP(?)              ;BUFFER TO STORE FILE CONTENT
 
 ;=================================PRINTING VARIABLES==================================
 ;FOR USER INPUT
@@ -30,6 +35,8 @@ CHOICEMSG   DB      "INPUT YOUR CHOICE > $"
 NAMEMSG     DB      "ENTER CUSTOMER'S NAME > $"
 ;PAX
 PAXMSG      DB      "ENTER NO. OF PAX > $"
+;TABLE
+TABLEMSG    DB      "ENTER NO. OF TABLES: $"
 ;DATE AND TIME
 DATEMSG     DB      "ENTER RESERVATION DATE (DD/MM/YY) > $"
 TIMEMSG     DB      "ENTER RESERVATION TIME (HH:MM)> $"
@@ -40,19 +47,23 @@ MEMBERMSG   DB      "MEMBER? > $"
 ;INVALID
 INVALIDMSG  DB      "INVALID INPUT. PLEASE ENTER AGAIN", LF, CR, "$"
 ;SUMMARY
-SETMSG      DB      "SET ORDERED: $"
+EVENTDIS    DB      "FUNCTION RESERVED: $"
+SETDIS      DB      "SET ORDERED: $"
 NAMEDIS     DB      "CUSTOMER NAME: $"
 PAXDIS      DB      "PAX: $"
+TABLEDIS    DB      "NO. OF TABLES: $"
 DATEDIS     DB      "DATE: $"
 TIMEDIS     DB      "TIME: $"
-TOTALDIS    DB      "TOTAL: $"
+TOTALDIS    DB      "TOTAL: USD $"
 
-;======================================CHAR INPUT=====================================
+;===================================CHAR VARIABLES====================================
+;FOR USER INPUT
 CHOICE      DB      ?
 MEMBER      DB      ?
 PAX         DB      ?
+INTABLE     DB      ?
 ORDSET      DB      ?
-;===================================STRING INPUT======================================
+;==================================STRING VARIABLES===================================
 ;CUSTOMER NAME
 INNAME      LABEL   BYTE
 MAXNAME     DB      20
@@ -67,18 +78,27 @@ SPACEDATE   DB      9 DUP(' ')
 
 ;TIME
 INTIME      LABEL   BYTE
-MAXTIME     DB      5
+MAXTIME     DB      6
 ACTUALTIME  DB      ?
-SPACETIME   DB      5 DUP(' ')
+SPACETIME   DB      6 DUP(' ')
 
+;DISPLAY FULL NAME FOR EVENT
+WEDDIS      DB      "WEDDING$"
+EVTDIS      DB      "EVENT$"
 ;=====================================CONSTANTS=======================================
 ;NEW LINE
 CR          EQU     0DH                     ;CARRIAGE RETURN SHORT FORM
 LF          EQU     0AH                     ;LINE FEED SHORT FORM
+NL          DB      13, 10, "$"             ;NEW LINE FOR FILE
 
 ;SET MENU PRICE
-ASET        DW      2
-BSET        DW      5
+ASET        DW      5
+BSET        DW      10
+CSET        DW      20
+
+;EVENT PRICE
+EPRICE      DW      45
+WPRICE      DW      50
 
 ;SST AND SERVICE CHARGE
 SST         DW      106
@@ -87,9 +107,10 @@ SRVC        DW      105
 ;SCALING FACTOR
 SCALE       DW      10000
 
+;CONCAT
+CONCAT      DB      '~'
 ;==============================VARIABLES FOR CALCULATION===============================
-COVINT      DB      ?, ?
-COVDEC      DB      ?, ?
+TOTALSTR    DB      7 DUP (' ')
 INTEGER     DW      ?
 DECIMAL     DW      ?
 TOTAL       DW      ?
@@ -106,12 +127,114 @@ REMAINDER   DW      ?
     MOV     DS, AX                          ;SET ADDRESS OF DATA SEGMENT IN DS
 ;====================================END OF HEADER====================================
 
-;===========================START OF INDIVIDUAL RESERVATION===========================
+; ;===========================START OF INDIVIDUAL RESERVATION===========================
+;     ;PRINT RESERVATION MENU
+;     INDIRES:        CALL    CLEARSCR
+;                     ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
+;                     ; MOV     AL, 0                               ;READ-ONLY MODE
+;                     ; LEA     DX, INDIMENU                        ;LOAD THE FILENAME INTO DX
+;                     ; INT     21H
+
+;                     ; ;READ THE FILE CONTENT
+;                     ; MOV     FILE_HANDLE, AX                     ;STORE THE FILE HANDLE
+;                     ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
+;                     ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
+;                     ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
+;                     ; LEA     DX, IMBUFFER                        ;BUFFER TO STORE THE CONTENT
+;                     ; INT     21H
+
+;                     ; ;DISPLAY THE FILE CONTENT
+;                     ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
+;                     ; LEA     DX, IMBUFFER                        ;LOAD THE BUFFER ADDRESS
+;                     ; INT     21H
+
+;                     ; ;CLOSE THE FILE
+;                     ; MOV     AH, 3EH                             
+;                     ; MOV     BX, FILE_HANDLE                     
+;                     ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
+
+;     CALL NEWLINE
+
+;     ;GET USER CHOICE INPUT
+;     CHOOSE:     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
+;                 LEA	    DX, CHOICEMSG
+;                 INT	    21H
+
+;                 MOV	    AH, 01H
+;                 INT	    21H			                        ;GET USER CHAR INPUT
+
+;                 MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
+
+;                 CALL    NEWLINE
+
+;     INDISET:    CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
+;                 MOV     ORDSET, 'A'                         ;STORE ORDSET AS A
+;                 JE      INDIA                               ;JUMP TO SET A
+
+;                 CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
+;                 MOV     ORDSET, 'B'                         ;STORE ORDSET AS B
+;                 JE      INDIB                               ;JUMP TO SET B
+
+;                 CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
+;                 MOV     ORDSET, 'C'                         ;STORE ORDSET AS C
+;                 JE      INDIC                               ;JUMP TO SET C
+
+;     CMP     CHOICE, '4'                         ;CHECK IF USER INPUT IS 4
+;     ;JE 	    MAKERES                             ;RETURN BACK TO MAIN MENU
+
+;     CALL    INVALID
+;     JMP     INDIRES                             ;JUMP TO PRINT INDIVIDUAL RESERVATION PAGE
+
+;     ;SET MENUS
+;     ;SET MENU 1
+;     INDIA:      CALL    GETPAX                  ;GET PAX
+
+;                 MOV     AH, 0                   ;CLEAR AH
+;                 MUL     ASET                    ;PAX * SET A PRICE
+;                 MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
+
+;                 CALL    NEWLINE
+;                 CALL    CHKMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
+;                 CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
+
+;                 JMP     DISSUM
+                
+;     ;SET MENU 2
+;     INDIB:      CALL    GETPAX                  ;GET PAX
+
+;                 MOV     AH, 0                   ;CLEAR AH
+;                 MUL     BSET                    ;PAX * SET B PRICE
+;                 MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
+                
+;                 CALL    NEWLINE
+;                 CALL    CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
+;                 CALL    DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
+                
+;                 JMP     DISSUM
+
+;     ;SET MENU 3
+;     INDIC:      CALL    GETPAX                  ;GET PAX
+
+;                 MOV     AH, 0                   ;CLEAR AH
+;                 MUL     CSET                    ;PAX * SET C PRICE
+;                 MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
+                
+;                 CALL    NEWLINE
+;                 CALL    CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
+;                 CALL    DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
+                
+;                 JMP     DISSUM
+       
+;     ;JMP     MAKERES
+
+; ;============================END OF INDIVIDUAL RESERVATION=============================
+
+;==============================START OF EVENT RESERVATION==============================
     ;PRINT RESERVATION MENU
-    INDIRES:        CALL    CLEARSCR
+    EVENTRES:        CALL    CLEARSCR
                     ; MOV     AH, 3DH                             ;DOS FUNCTION TO OPEN A FILE
                     ; MOV     AL, 0                               ;READ-ONLY MODE
-                    ; LEA     DX, INDIMENU                        ;LOAD THE FILENAME INTO DX
+                    ; LEA     DX, EVENTMENU                        ;LOAD THE FILENAME INTO DX
                     ; INT     21H
 
                     ; ;READ THE FILE CONTENT
@@ -119,90 +242,74 @@ REMAINDER   DW      ?
                     ; MOV     AH, 3FH                             ;DOS FUNCTION TO READ FROM A FILE
                     ; MOV     BX, FILE_HANDLE                     ;FILE HANDLE
                     ; MOV     CX, 900                             ;NUMBER OF BYTES TO READ AT A TIME
-                    ; LEA     DX, IMBUFFER                        ;BUFFER TO STORE THE CONTENT
+                    ; LEA     DX, EMBUFFER                        ;BUFFER TO STORE THE CONTENT
                     ; INT     21H
 
                     ; ;DISPLAY THE FILE CONTENT
                     ; MOV     AH, 09H                             ;DOS FUNCTION TO DISPLAY A STRING
-                    ; LEA     DX, IMBUFFER                        ;LOAD THE BUFFER ADDRESS
+                    ; LEA     DX, EMBUFFER                        ;LOAD THE BUFFER ADDRESS
                     ; INT     21H
 
                     ; ;CLOSE THE FILE
                     ; MOV     AH, 3EH                             
                     ; MOV     BX, FILE_HANDLE                     
                     ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
-
     CALL NEWLINE
 
-    ;GET USER CHOICE INPUT
-    CHOOSE:     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
-                LEA	    DX, CHOICEMSG
-                INT	    21H
+        ;GET USER CHOICE INPUT
+        ECHOOSE:     MOV	    AH, 09H                             ;DOS FUNCTION TO DISPLAY STRING
+                        LEA	    DX, CHOICEMSG
+                        INT	    21H
 
-                MOV	    AH, 01H
-                INT	    21H			                        ;GET USER CHAR INPUT
+                        MOV	    AH, 01H
+                        INT	    21H			                        ;GET USER CHAR INPUT
 
-                MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
+                        MOV     CHOICE, AL                          ;MOVE USER INPUT FROM AL TO STORE IN CHOICE
 
-                CALL    NEWLINE
+                        CALL    NEWLINE
 
-    CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
-    MOV     ORDSET, 'A'                         ;STORE AL TO ORDERED SET
-    JE      INDIA                               ;JUMP TO SET 1
+        ETYPE:  CMP     CHOICE, '1'                         ;CHECK IF USER INPUT IS 1
+                MOV     ORDSET, 'E'                          ;STORE EVENT TYPE AS E
+                JE      EV                                  ;JUMP TO SET A
 
-    CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
-    MOV     ORDSET, 'B'                         ;STORE AL TO ORDERED SET
-    JE      INDIB                               ;JUMP TO SET 2
+                CMP     CHOICE, '2'                         ;CHECK IF USER INPUT IS 2
+                MOV     ORDSET, 'W'                          ;STORE EVENT TYPE AS W
+                JE      WED                                 ;JUMP TO SET B
 
-    CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 4
-    ;JE 	    MAKERES                             ;RETURN BACK TO MAIN MENU
+                CMP     CHOICE, '3'                         ;CHECK IF USER INPUT IS 3
+                ;JE 	    MAKERES                             ;RETURN BACK TO MAIN MENU
 
-    CALL    INVALID
-    JMP     INDIRES                             ;JUMP TO PRINT INDIVIDUAL RESERVATION PAGE
+        CALL    INVALID
+        JMP     EVENTRES                           ;JUMP TO PRINT EVENT RESERVATION PAGE
 
-    ;SET MENUS
-    ;SET MENU 1
-    INDIA:      MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
-                LEA     DX, PAXMSG
-                INT     21H
-
-                CALL    GETPAX                  ;GET PAX
-
+        EV:     CALL    GETTAB                  ;GET TABLE QTY
+                
                 MOV     AH, 0                   ;CLEAR AH
-                MUL     ASET                    ;PAX * SET A PRICE
-                MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
+                MUL     EPRICE
+                MOV     TOTAL, AX
 
                 CALL    NEWLINE
                 CALL    CHKMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-                CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
+                CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS       
+                JMP     DISSUM
 
-                CALL    CLEARSCR
-                ;DISPLAY SUMMARY
-                CALL    SUMMARY                 ;CALL SUMMARY FUNCTION
-                ;CALL    WRTRES                  ;CALL WRITE FILE FUCTION
+        WED:    CALL    GETTAB                  ;GET TABLE QTY
                 
-    ;SET MENU 2
-    INDIB:      MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
-                LEA     DX, PAXMSG
-                INT     21H
-
-                CALL    GETPAX                  ;GET PAX
-
                 MOV     AH, 0                   ;CLEAR AH
-                MUL     BSET                    ;PAX * SET B PRICE
-                MOV     TOTAL, AX               ;STORE RESULT IN TOTAL
-                
+                MUL     WPRICE
+                MOV     TOTAL, AX
+
                 CALL    NEWLINE
-                CALL     CHKMEM                 ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
-                CALL     DETAILS                ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS
-                
-                CALL    CLEARSCR
+                CALL    CHKMEM                  ;CALL FUNCTION TO CHECK FOR MEMBER STATUS AND CALCULATE FINAL TOTAL
+                CALL    DETAILS                 ;CALL DETAILS FUNCTION TO GET RESERVATION DETAILS       
+
+        DISSUM: CALL    CLEARSCR
                 ;DISPLAY SUMMARY
                 CALL    SUMMARY                 ;CALL SUMMARY FUNCTION
-                ;CALL    WRTRES                  ;CALL WRITE FILE FUCTION
-                ;JMP     MAKERES
+                ;CALL    WRITERES                ;CALL WRITE FILE FUCTION
+                JMP     EXIT
 
-;============================END OF INDIVIDUAL RESERVATION=============================
+;===============================END OF EVENT RESERVATION===============================
 
 ;===================================START OF FUNCTIONS=================================
 ;NEW LINE
@@ -271,11 +378,16 @@ REMAINDER   DW      ?
             MOV     AX, 0                   ;CLEAR AX
 
             CALL    LOADING
+            CALL    CLEARSCR
             RET
     INVALID     ENDP
 
 ;GET PAX
-    GETPAX      PROC                
+    GETPAX      PROC
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, PAXMSG
+            INT     21H
+
             MOV	    AH, 01H
             INT	    21H			            ;GET USER PAX INPUT
             MOV     PAX, AL                 ;STORE USER INPUT IN PAX
@@ -291,10 +403,38 @@ REMAINDER   DW      ?
     
 ;INVALID PAX
     INVALIDPAX      PROC
+            CALL    NEWLINE
             CALL    INVALID                 ;CALL INVALID MSG
-            JMP     CHOOSE                  ;GO BACK TO ASKING FOR PAX
+            ;JMP     INDISET
     INVALIDPAX      ENDP
-;GET DETAILS NAME AND PAX
+
+;GET TABLE QTY
+    GETTAB      PROC
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, TABLEMSG
+            INT     21H
+
+            MOV	    AH, 01H
+            INT	    21H			            ;GET USER PAX INPUT
+            MOV     INTABLE, AL             ;STORE USER INPUT IN PAX
+            SUB     AL, 30H                 ;CONVERT ASCII TO REAL VALUE
+
+            CMP     AL, 1
+            JL      INVALIDTAB
+            CMP     AL, 9
+            JG      INVALIDTAB
+
+            RET
+    GETTAB      ENDP
+
+;INVALID TABLE QTY
+    INVALIDTAB      PROC
+            CALL    NEWLINE
+            CALL    INVALID                 ;CALL INVALID MSG
+            JMP     ETYPE                   ;GO BACK TO ASKING FOR TABLE QTY
+    INVALIDTAB      ENDP
+
+;GET DETAILS
     DETAILS    PROC
             MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
             LEA     DX, NAMEMSG
@@ -378,27 +518,28 @@ REMAINDER   DW      ?
 
     ;HAS MEMBER
     GOTMEM:     MOV     AX, TOTAL               ;MOVE TOTAL TO AX FOR CALCULATIONS
-
-                MUL     SST                     ;MULTIPLY AX WITH SST            
-                MUL     SRVC                    ;MULTIPLY AX WITH SST
-                DIV     SCALE                   ;DIVIDE WITH SCALING FACTOR
-
+                CMP     ORDSET, 'E'             ;COMPARE ORDSET WITH E
+                JE      EVTDISC                 ;IF YES, JUMP TO CALEVT
+                CMP     ORDSET, 'W'             ;COMPARE ORDSET WITH W
+                JE      EVTDISC                 ;IF YES, JUMP TO CALEVT
+                
                 SUB     AX, 5                   ;SUBTRACT 5 AS A DISCOUNT
-
-                MOV     INTEGER, AX             ;STORE THE QUOTIENT TO INTEGER
-                MOV     DECIMAL, DX             ;STORE THE REMAINDER TO DECIMAL
-
-                RET
+                JMP     CALTOTAL                ;IF NOT, JUMP TO CALTOTAL
+    
+    EVTDISC:    SUB     AX, 15                  ;SUBTRACT 15 AS A DISCOUNT
+                JMP     CALTOTAL                ;JUMP TO CALTOTAL
 
     ;NO MEMBER
     NOMEM:      MOV     AX, TOTAL               ;MOVE TOTAL TO AX FOR CALCULATIONS
 
-                MUL     SST                     ;MULTIPLY AX WITH SST
+    CALTOTAL:   MUL     SST                     ;MULTIPLY AX WITH SST            
                 MUL     SRVC                    ;MULTIPLY AX WITH SST
-                DIV     SCALE                   ;DIVIDE SCALING FACTOR
+                DIV     SCALE                   ;DIVIDE WITH SCALING FACTOR
 
                 MOV     INTEGER, AX             ;STORE THE QUOTIENT TO INTEGER
                 MOV     DECIMAL, DX             ;STORE THE REMAINDER TO DECIMAL
+
+                CALL    CLEARSCR
 
                 RET
     CHKMEM      ENDP
@@ -429,18 +570,7 @@ REMAINDER   DW      ?
             ; MOV     BX, FILE_HANDLE                     
             ; INT     21H                                 ;DOS FUNCTION TO CLOSE A FILE
 
-            ;ORDERED SET
-            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
-            LEA     DX, SETMSG
-            INT     21H
-
-            MOV     DX, 0                   ;CLEAR DX
-            MOV     AH, 02H                 ;DOS FUNCTION FOR DISPLAY CHAR
-            MOV     DL, ORDSET
-            INT     21H
-
-            CALL    NEWLINE
-
+            MOV     AX, 0                   ;CLEAR AX
             ;NAME
             MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
             LEA     DX, NAMEDIS
@@ -452,6 +582,12 @@ REMAINDER   DW      ?
 
             CALL   NEWLINE                  ;NEXT LINE
 
+            CMP     ORDSET, 'E'                 ;CHECK IF ORDSET IS E
+            JE      PRTEVT                      ;JUMP TO PRTEVT
+            CMP     ORDSET, 'W'                 ;CHECK IF ORDSET IS E
+            JE      PRTEVT                      ;JUMP TO PRTEVT
+            
+            ;INDIVIDUAL RESERVATION
             ;PAX
             MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
             LEA     DX, PAXDIS
@@ -462,7 +598,51 @@ REMAINDER   DW      ?
             MOV     DL, PAX
             INT     21H
 
-            CALL   NEWLINE                  ;NEXT LINE
+            CALL    NEWLINE
+
+            ;ORDERED SET
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, SETDIS
+            INT     21H
+
+            MOV     DX, 0                   ;CLEAR DX
+            MOV     AH, 02H                 ;DOS FUNCTION FOR DISPLAY CHAR
+            MOV     DL, ORDSET
+            INT     21H
+
+            JMP     CONTDIS
+            ;EVENT RESERVATION
+            ;RESERVED EVENT
+            PRTEVT:     ;PAX
+                        MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+                        LEA     DX, TABLEDIS
+                        INT     21H
+                        
+                        MOV     AX, 0                   ;CLEAR AX
+                        MOV     AH, 02H                 ;DOS FUNCTION FOR DISPLAY CHAR
+                        MOV     DL, INTABLE
+                        INT     21H
+
+                        CALL    NEWLINE
+
+                        MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+                        LEA     DX, EVENTDIS
+                        INT     21H
+
+                        CMP     ORDSET, 'E'
+                        JE      SUME
+    
+                        MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+                        LEA     DX, WEDDIS
+                        INT     21H
+                        JMP     CONTDIS
+
+            SUME:       MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+                        LEA     DX, EVTDIS
+                        INT     21H
+
+            CONTDIS:
+            CALL    NEWLINE
 
             ;DATE
             MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
@@ -487,10 +667,6 @@ REMAINDER   DW      ?
             CALL    NEWLINE
 
             ;TOTAL AMOUNT
-            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
-            LEA     DX, TOTALDIS
-            INT     21H
-
             ;CHECK IF TOTAL NEEDS ROUNDING
             MOV     DX, 0                   ;CLEAR DX
             MOV     AX, DECIMAL             ;MOVE DECIMAL TO AX
@@ -515,109 +691,196 @@ REMAINDER   DW      ?
                             JMP     NOROUND             ;GO TO DISPLAY
 
             ;NO NEED ROUNDING UP
-            ;DIPLAY INTEGER
-            NOROUND:    MOV     AX, INTEGER         ;STORE INTEGER INTO AX
-                        MOV     SI, 0
-                        MOV     DX, 0               ;CLEAR DX
-                        MOV     BX, 10              ;STORE 10 IN BX FOR DIVISION
-                        DIV     BX                  ;AX/10, QUOTIENT IS STORED IN AX AND REMAINDER IS STORE IN DX
-                        MOV     COVINT[SI], AL      ;MOVE INTEGER INTO ARRAY
-                        INC     SI
-                        MOV     COVINT[SI], DL
+            ;STORE INTEGER
+            NOROUND:    MOV     AX, INTEGER             ;STORE INTEGER INTO AX
+                        MOV     SI, 0                   ;DECLARE SI AS INDEX
+                        MOV     DX, 0                   ;CLEAR DX
+                        MOV     BX, 10                  ;STORE 10 IN BX FOR DIVISION
+                        DIV     BX                      ;AX/10, QUOTIENT IS STORED IN AX AND REMAINDER IS STORE IN DX
+                        CMP     AX, 9                   ;COMPARE AX WITH 9
+                        JG      THREEINT                ;JUMP TO THREE INTEGER IF THERE'S 3 INT
 
-            MOV     SI, 0                            
-            INTEGERLOOP:    MOV     AH, 02H         ;DOS FUNCTION TO DISPLAY CHAR
-                            MOV     DL, COVINT[SI]  ;MOVE INT TO DL TO BE DISPLAYED
-                            ADD     DL, 30H         ;CONVERT VALUE TO ASCII
-                            INT     21H             ;DISPLAY ASCII VALUE
+                        ADD     AL, 30H                 ;CONVERT VALUE TO ASCII
+                        MOV     TOTALSTR[SI], AL        ;MOVE INTEGER INTO ARRAY FOR TWO INT
+                        INC     SI                      ;STORE TO NEXT INDEX
+                        ADD     DL, 30H                 ;CONVERT VALUE TO ASCII
+                        MOV     TOTALSTR[SI], DL        ;STORE SECOND INDEX
+                        INC     SI                      ;STORE TO NEXT INDEX
+                        MOV     TOTALSTR[SI], '.'       ;STORE DOT IN THE 3RD INDEX
+                        JMP     STOREDECIMAL            ;JUMP TO STORE DECIMAL
 
+            THREEINT:   ADD     DL, 30H                 ;CONVERT VALUE TO ASCII
+                        MOV     TOTALSTR[2], DL         ;IF 3 INTS, STORE DIGIT INTO 3RD INDEX FIRST
+                        MOV     DX, 0                   ;CLEAR DX
+                        MOV     BX, 10                  ;STORE 10 IN BX FOR DIVISION
+                        DIV     BX                      ;AX/10, QUOTIENT IS STORED IN AX AND REMAINDER IS STORE IN DX
+                        ADD     AL, 30H                 ;CONVERT VALUE TO ASCII
+                        MOV     TOTALSTR[SI], AL        ;MOVE INTEGER INTO 1ST INDEX IN ARRAY
+                        INC     SI                      ;STORE TO NEXT INDEX
+                        ADD     DL, 30H                 ;CONVERT VALUE TO ASCII
+                        MOV     TOTALSTR[SI], DL        ;STORE SECOND INDEX
+                        MOV     SI, 3                   ;START FROM THE 4TH INDEX
+                        MOV     TOTALSTR[SI], '.'       ;STORE DOT IN THE 4TH INDEX
+
+            ;STORE DECIMAL
+            STOREDECIMAL:   MOV     AX, DECIMAL         ;STORE THE DECIMAL BACK TO AX
+                            MOV     DX, 0               ;CLEAR DX
+                            MOV     BX, 10              ;STORE 10 IN BX FOR DIVISION
+                            DIV     BX                  ;AX/10, QUOTIENT IS STORED IN AX AND REMAINDER IS STORE IN DX
                             INC     SI
-                            CMP     SI, 2
-                            JNE     INTEGERLOOP
-
-                        ;DISPLAY DECIMAL
-                        MOV     AH, 02H                 ;DOS FUNCTION TO DISPLAY CHAR
-                        MOV     DL, '.'                 ;DISPLAY DECIMAL DOT
-                        INT     21H
-
-                        MOV     AX, DECIMAL             ;STORE THE DECIMAL BACK TO AX
-                        MOV     SI, 0
-                        
-                        MOV     DX, 0           ;CLEAR DX
-                        MOV     BX, 10          ;STORE 10 IN BX FOR DIVISION
-                        DIV     BX              ;AX/10, QUOTIENT IS STORED IN AX AND REMAINDER IS STORE IN DX
-                        MOV     COVDEC[SI], AL
-                        INC     SI
-                        MOV     COVDEC[SI], DL
-
-            MOV     SI, 0                            
-            DECIMALLOOP:    MOV     AH, 02H         ;DOS FUNCTION TO DISPLAY CHAR
-                            MOV     DL, COVDEC[SI]  ;MOVE INT TO DL TO BE DISPLAYED
-                            ADD     DL, 30H         ;CONVERT VALUE TO ASCII
-                            INT     21H             ;DISPLAY ASCII VALUE
-
+                            ADD     AL, 30H             ;CONVERT VALUE TO ASCII
+                            MOV     TOTALSTR[SI], AL    ;STORE FIRST DECIMAL
                             INC     SI
-                            CMP     SI, 2
-                            JNE     DECIMALLOOP
+                            ADD     DL, 30H             ;CONVERT VALUE TO ASCII
+                            MOV     TOTALSTR[SI], DL    ;STORE SECOND DECIMAL
+                            INC     SI
+                            MOV     TOTALSTR[SI], '$'   ;TERMINATE THE STRING
             
-            CALL    NEWLINE
+            MOV     AX, 0                   ;CLEAR AX
+            ;DISPLAY TOTAL
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, TOTALDIS
+            INT     21H
+
+            MOV     AH, 09H                 ;DOS FUNCTION FOR DISPLAY STRING
+            LEA     DX, TOTALSTR
+            INT     21H
+            
             RET             ;RETURN ONCE DONE DISPLAYING      
     SUMMARY     ENDP
 
 ;WRITE RESERVATION TO FILE
-    WRITERES    PROC
-            ; MOV     AH, 3CH               ;DOS FUNCTION TO CREATE A FILE
-            ; MOV     CX, 2                 ;APPEND MODE
-            ; LEA     DX, SPACENAME         ;LOAD THE FILENAME INTO DX
+        WRITERES    PROC
+            ; MOV     AX, 0               ;CLEAR AX
+            ; MOV     AH, 3DH             ;DOS FUNCTION TO CREATE OR OPEN A FILE
+            ; MOV     AL, 1               ;APPEND MODE
+            ; LEA     DX, RESFILE         ;LOAD THE FILENAME INTO DX
             ; INT     21H
 
-            ; ;SET POINTER TO EOF
-            ; MOV     AX, 4202H             ;DOS FUNCTION TO SET FILE POINTER
-            ; MOV     BX, AX                ;FILE HANDLER
-            ; MOV     CX, 0                 ;SET POINTER TO LEFT COL
-            ; MOV     DX, 0                 ;SET POINTER TO TOP ROW
+            ; ;GET FILE HANDLER
+            ; MOV     FILE_HANDLE, AX     ;FILE HANDLER
+
+            ; ; ;SET POINTER TO EOF
+            ; MOV     AH, 42H             ;DOS FUNCTION TO SET FILE POINTER
+            ; MOV     AL, 2               ;MOVE FROM END OF FILE
+            ; MOV     BX, FILE_HANDLE     ;FILE HANDLER
+            ; MOV     CX, 0               ;SET POINTER TO LEFT COL
+            ; MOV     DX, 0               ;SET POINTER TO TOP ROW
             ; INT     21H
 
             ; ;WRITE DATA TO FILE
             ; ;NAME
+            ; MOV     AX, 0               ;CLEAR AX
+            ; MOV     AH, 40H             ;DOS FUNCTION TO WRITE TO A FILE
+            ; MOV     BX, FILE_HANDLE     ;FILE HANDLER
+            ; MOV     CL, [MAXNAME+1]     ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, [MAXNAME+2]     ;ADDRESS OF DATA TO WRITE
+            ; INT     21H
+
+            ; JC      WRITEERR
+            ; ;CONCAT
+            ; MOV     AX, 0               ;CLEAR AX
             ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
-            ; MOV     BX, AX                    ;FILE HANDLER
-            ; MOV     CX, 20                    ;LENGTH OF DATA TO WRITE
-            ; LEA     DX, ACTUALNAME            ;ADDRESS OF DATA TO WRITE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CX, 1                     ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, CONCAT                   ;ADDRESS OF DATA TO WRITE
             ; INT     21H
 
             ; ;SET ORDERED
-            ;  MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
-            ;  MOV     BX, AX                    ;FILE HANDLER
-            ;  MOV     CX, LENGTHOF ORDSET       ;LENGTH OF DATA TO WRITE
-            ;  LEA     DX, ORDSET                ;ADDRESS OF DATA TO WRITE
-            ;  INT     21H
+            ; MOV     AX, 0               ;CLEAR AX
+            ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CX, 1                     ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, ORDSET                ;ADDRESS OF DATA TO WRITE
+            ; INT     21H
+
+            ; ;CONCAT
+            ; MOV     AX, 0               ;CLEAR AX
+            ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CX, 1                     ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, CONCAT                   ;ADDRESS OF DATA TO WRITE
+            ; INT     21H
 
             ; ;PAX
+            ; MOV     AX, 0               ;CLEAR AX
             ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
-            ; MOV     BX, AX                    ;FILE HANDLER
-            ; MOV     CX, LENGTHOF PAX          ;LENGTH OF DATA TO WRITE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CX, 1                     ;LENGTH OF DATA TO WRITE
             ; LEA     DX, PAX                   ;ADDRESS OF DATA TO WRITE
             ; INT     21H
 
-            ; ;DATE
+            ; ;CONCAT
+            ; MOV     AX, 0               ;CLEAR AX
             ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
-            ; MOV     BX, AX                    ;FILE HANDLER
-            ; MOV     CX, LENGTHOF SPACEDATE    ;LENGTH OF DATA TO WRITE
-            ; LEA     DX, ACTUALDATE            ;ADDRESS OF DATA TO WRITE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CX, 1                     ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, CONCAT                   ;ADDRESS OF DATA TO WRITE
+            ; INT     21H
+
+            ; ;DATE
+            ; MOV     AX, 0               ;CLEAR AX
+            ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CL, [MAXDATE+1]             ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, [MAXDATE+2]                ;ADDRESS OF DATA TO WRITE
+            ; INT     21H
+
+            ; ;CONCAT
+            ; MOV     AX, 0               ;CLEAR AX
+            ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CX, 1                     ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, CONCAT                   ;ADDRESS OF DATA TO WRITE
             ; INT     21H
 
             ; ;TIME
+            ; MOV     AX, 0               ;CLEAR AX
             ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
-            ; MOV     BX, AX                    ;FILE HANDLER
-            ; MOV     CX, LENGTHOF SPACETIME    ;LENGTH OF DATA TO WRITE
-            ; LEA     DX, ACTUALTIME            ;ADDRESS OF DATA TO WRITE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CL, [MAXTIME+1]             ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, [MAXTIME+2]                ;ADDRESS OF DATA TO WRITE
+            ; INT     21H
+
+            ; ;CONCAT
+            ; MOV     AX, 0               ;CLEAR AX
+            ; MOV     AH, 40H                   ;DOS FUNCTION TO WRITE TO A FILE
+            ; MOV     BX, FILE_HANDLE           ;FILE HANDLER
+            ; MOV     CX, 1                     ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, CONCAT                   ;ADDRESS OF DATA TO WRITE
+            ; INT     21H
+
+            ; ;TOTAL
+            ; MOV     SI, 0       ;DECLARE SI
+            ; WRTTOL:     MOV     AL, TOTALSTR[SI]        ;MOVE CHAR INTO AL
+            ;             INC     SI                      ;SI++
+            ;             CMP     AL, '$'                 ;CHECK IF AL IS TERMINATOR
+            ;             JE      FINTOL
+            ;             MOV     AX, 0                   ;CLEAR AX
+            ;             MOV     AH, 40H                 ;DOS FUNCTION TO WRITE TO A FILE
+            ;             MOV     BX, FILE_HANDLE         ;FILE HANDLER
+            ;             MOV     CX, 1                   ;LENGTH OF DATA TO WRITE
+            ;             LEA     DX, TOTALSTR[SI-1]      ;ADDRESS OF DATA TO WRITE
+            ;             INT     21H
+            ;             JMP     WRTTOL
+                        
+            ; FINTOL:
+
+            ; ;NEXTLINE
+            ; MOV     AX, 0                   ;CLEAR AX
+            ; MOV     AH, 40H                 ;DOS FUNCTION TO WRITE TO A FILE
+            ; MOV     BX, FILE_HANDLE         ;FILE HANDLER
+            ; MOV     CX, 2                   ;LENGTH OF DATA TO WRITE
+            ; LEA     DX, NL                  ;ADDRESS OF DATA TO WRITE
             ; INT     21H
 
             ; ;CLOSE THE FILE
-            ; MOV     AH, 3EH                                     
-            ; INT     21H                   ;DOS FUNCTION TO CLOSE A FILE
-            RET
+            ; MOV     AX, 0               ;CLEAR AX
+            ; MOV     AH, 3EH             ;DOS FUNCTION TO CLOSE FILE
+            ; MOV     BX, FILE_HANDLE
+            ; INT     21H
+
+            ; RET
     WRITERES    ENDP
 ;===================================END OF FUNCTIONS===================================
 
